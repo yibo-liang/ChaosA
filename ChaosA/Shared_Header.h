@@ -91,11 +91,15 @@ main {
 
 #include <string>
 #include <vector>
+#include <iostream>
 
 using std::vector;
 using std::string;
 using uint = uint32_t;
 using floatBase = float;
+using std::cout;
+using std::cin;
+using std::endl;
 
 enum CellType
 {

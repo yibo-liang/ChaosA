@@ -112,9 +112,7 @@
   <ItemGroup>
     <ClInclude Include="Genome.h" />
     <ClInclude Include="IObject.h" />
-    <ClInclude Include="NerualNode.h" />
-    <ClInclude Include="NeuralLayer.h" />
-    <ClInclude Include="NeuralNetwork.h" />
+    <ClInclude Include="NeuralNetwork.hpp" />
     <ClInclude Include="Organism.h" />
     <ClInclude Include="Pool.h" />
     <ClInclude Include="Shared_Header.h" />

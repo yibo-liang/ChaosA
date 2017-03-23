@@ -17,8 +17,8 @@ public:
 
 	Organism toOrganism();
 
-	vector<float> evolvingChoiceVec;
-	vector<vector<vector<float>>> NNEncoding; //encoding network, encoding[layer][node][weight]
+	vector<floatBase> evolvingChoiceVec;
+	vector<floatBase> neuralNetworkEncoding;
 
 
 
