@@ -1,6 +1,6 @@
 #pragma once
 
-/* 
+/*
 
 Cells {
 	states:
@@ -21,23 +21,11 @@ Cells {
 		size
 		speed => max speed
 		agility => max turing direction angle
-		neural network 
+		neural network
 }
 
 neural network {
-	[nodes]{
-		[incoming nodes]
-		[weights],
-		history value
-		current value
-		type
-	}
-	encode(){
-		
-	}
-	decode(){
 
-	}
 }
 
 main {
@@ -47,9 +35,9 @@ main {
 	}
 
 	run pool{
-		
+
 		evaluate(){
-			while(some cell alive && time smaller than ){			
+			while(some cell alive && time smaller than ){
 				generate foods
 				foreach cell{
 					if not alive: continue
@@ -80,7 +68,7 @@ main {
 		selection()
 		crossover()
 		mutation()
-		
+
 	}
 
 
@@ -92,6 +80,14 @@ main {
 #include <string>
 #include <vector>
 #include <iostream>
+#include <random>
+#include <algorithm>
+#include <iterator>
+#include <iostream>
+#include <functional>
+
+#define SIZE 0
+#define FLEXIBILITY 1
 
 using std::vector;
 using std::string;
@@ -105,3 +101,20 @@ enum CellType
 {
 	input, output, bias, hidden
 };
+
+#define FRAME_RATE 30
+#define SIZE_BASE 10
+#define SIZE_VISION_CORRELATION 5
+#define VISION_BASE 10
+#define SPEED_BASE 15
+
+inline floatBase speedFormula(floatBase size) {
+	return pow(size, (-0.3)) * 2 * SPEED_BASE;
+}
+
+inline floatBase get_random()
+{
+	static std::default_random_engine e;
+	static std::uniform_real_distribution<floatBase> dis(0, 1); // rage 0 - 1
+	return dis(e);
+}

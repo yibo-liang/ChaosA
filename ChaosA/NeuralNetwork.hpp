@@ -1,12 +1,7 @@
 #pragma once
 #ifndef NEURAL_NET
 #define NEURAL_NET
-#include "Shared_Header.h"
-#include <random>
-#include <algorithm>
-#include <iterator>
-#include <iostream>
-#include <functional>
+#include "Shared_Header.hpp"
 struct matrix
 {
 	floatBase * dataPtr; //size I*O, access dataPtr[o row][i col],  is weight of (i input node) to (o output node)
@@ -95,6 +90,23 @@ public:
 			ptr_offset += matrixSize;
 		}
 	};
+
+	Network(const vector<int>& networkStruct, const vector<floatBase>& dataVec) {
+		this->dataVec = dataVec;
+		//init weight matrices
+		this->networkStruct = networkStruct;
+		int ptr_offset = 0;
+		for (int i = 0; i < networkStruct.size() - 1; i++) {
+			int input_n = networkStruct[i];
+			int output_n = networkStruct[i + 1];
+			weightMatrices.push_back(matrix(&this->dataVec[ptr_offset], input_n, output_n));
+
+			int matrixSize = input_n*output_n;
+			ptr_offset += matrixSize;
+		}
+	}
+
+	Network() {};
 	~Network() {};
 
 private:

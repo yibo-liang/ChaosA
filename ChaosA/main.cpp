@@ -1,4 +1,4 @@
-#include "Shared_Header.h"
+#include "Shared_Header.hpp"
 #include "NeuralNetwork.hpp"
 int main() {
 

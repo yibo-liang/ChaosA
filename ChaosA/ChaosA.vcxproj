@@ -110,12 +110,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Genome.h" />
-    <ClInclude Include="IObject.h" />
+    <ClInclude Include="Genome.hpp" />
+    <ClInclude Include="IObject.hpp" />
     <ClInclude Include="NeuralNetwork.hpp" />
-    <ClInclude Include="Organism.h" />
-    <ClInclude Include="Pool.h" />
-    <ClInclude Include="Shared_Header.h" />
+    <ClInclude Include="Organism.hpp" />
+    <ClInclude Include="Pool.hpp" />
+    <ClInclude Include="Shared_Header.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

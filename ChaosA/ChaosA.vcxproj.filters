@@ -24,23 +24,23 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Shared_Header.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Organism.h">
-      <Filter>Header Files\Entity</Filter>
-    </ClInclude>
-    <ClInclude Include="Pool.h">
-      <Filter>Header Files\GA</Filter>
-    </ClInclude>
-    <ClInclude Include="Genome.h">
-      <Filter>Header Files\GA</Filter>
-    </ClInclude>
-    <ClInclude Include="IObject.h">
-      <Filter>Header Files\Entity</Filter>
-    </ClInclude>
     <ClInclude Include="NeuralNetwork.hpp">
       <Filter>Header Files\NN</Filter>
+    </ClInclude>
+    <ClInclude Include="IObject.hpp">
+      <Filter>Header Files\Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Organism.hpp">
+      <Filter>Header Files\Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Genome.hpp">
+      <Filter>Header Files\GA</Filter>
+    </ClInclude>
+    <ClInclude Include="Pool.hpp">
+      <Filter>Header Files\GA</Filter>
+    </ClInclude>
+    <ClInclude Include="Shared_Header.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
