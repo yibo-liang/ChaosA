@@ -4,16 +4,10 @@
 #include "Shared_Header.hpp"
 #include "Organism.hpp"
 
-
-
 class Genome
 {
 public:
 
-	Organism toOrganism() {
-		return Organism(*this);
-		
-	};
 
 	floatBase fitness;
 
@@ -22,26 +16,50 @@ public:
 	vector<int> neuralStruct;
 	int speciesID;
 
-	Genome(): bodyEncoding(vector<floatBase>(2))
+	Genome()
 	{
+		bodyEncoding = (vector<floatBase>(2));
 		bodyEncoding[SIZE] = SIZE_BASE;
-		bodyEncoding[FLEXIBILITY] = SIZE_BASE;
-
-
+		bodyEncoding[FLEXIBILITY] = PI / 12;
 	};
 	Genome(const vector<int>& neuralStruct) {
-		Genome();
+		bodyEncoding = (vector<floatBase>(2));
+		bodyEncoding[SIZE] = SIZE_BASE;
+		bodyEncoding[FLEXIBILITY] = PI / 12;
 		this->neuralStruct = neuralStruct; 
+		init(neuralStruct);
 	}
 	Genome(const Genome& genome) {
+		this->fitness = genome.fitness;
 		this->bodyEncoding = genome.bodyEncoding;
 		this->neuralNetworkEncoding = genome.neuralNetworkEncoding;
 		this->neuralStruct = genome.neuralStruct;
+		this->speciesID = genome.speciesID;
 	};
 	~Genome() {
 	};
 
 private:
+	inline void init(const vector<int> & networkStruct) {
 
+		using namespace std;
+		int size = 0;
+		for (int i = 0; i < networkStruct.size() - 1; i++) {
+			int input_n = networkStruct[i];
+			int output_n = networkStruct[i + 1];
+			int matrixSize = input_n*output_n;
+			size += matrixSize;
+		}
+		neuralNetworkEncoding = vector<floatBase>(size);
+
+		// First create an instance of an engine.
+		random_device rnd_device;
+		// Specify the engine and distribution.
+		mt19937 mersenne_engine(rnd_device());
+		uniform_real_distribution<floatBase> dist(-2, 2);
+		auto gen = std::bind(dist, mersenne_engine);
+
+		generate(begin(neuralNetworkEncoding), end(neuralNetworkEncoding), gen);
+	}
 };
 #endif // !GENOME

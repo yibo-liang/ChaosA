@@ -6,9 +6,19 @@
 
 class Food : public IObject
 {
+	using IObject::getTypeID;
 public:
+	int getTypeID() const {
+		//cout << "get food id" << endl;
+		return ID_FOOD;
+	}
+	Food(const Food & food) {
+		this->x = food.x;
+		this->y = food.y;
+		setSize(food.getSize());
+	}
 	Food() {
-		size = get_random() * SIZE_BASE;
+		setSize(get_random() * SIZE_BASE / 2);
 	};
 	~Food() {};
 

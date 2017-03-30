@@ -10,11 +10,14 @@ class Organism : public IObject
 {
 public:
 	//runtime status
-	floatBase hunger;
+	floatBase lifespan = 0;
+	floatBase foodGet = 0;
+
+	floatBase hunger = INIT_HUNGER;
 	floatBase acceleration; // maximum = maxSpeed / t
 	floatBase direction;
+	floatBase speed = 0;
 	vector<floatBase> perception;
-	bool alive;
 
 	Network neuralNetwork;
 
@@ -25,31 +28,42 @@ public:
 	floatBase agility; //max speed at turning around
 	//floatBase size; //Already defined in IObject
 
-	int speciesID;
 
-	const Genome & genome;
+	Genome & genome;
+
+	int getTypeID() const {
+		return ID_ORGANISM;
+	}
+
+	int getSpecies() const{
+		return genome.speciesID;
+	}
 
 	Organism(const Organism& o) : genome(o.genome) {
+		this->lifespan = o.lifespan;
 		this->hunger = o.hunger;
 		this->acceleration = o.acceleration;
 		this->direction = o.direction;
 		this->perception = o.perception;
-		this->alive = o.alive;
+		this->exist = o.exist;
 
 		this->neuralNetwork = Network(o.neuralNetwork);
 		this->vision = o.vision;
 		this->maxSpeed = o.maxSpeed;
 		this->agility = o.agility;
 
-		this->speciesID = o.speciesID
+		this->x = o.x;
+		this->y = o.y;
+		setSize(o.getSize());
 	}
 
-	Organism(const Genome& genome) : genome(genome) {
+	Organism(Genome& g) : genome(g) {
 		this->neuralNetwork = Network(genome.neuralStruct, genome.neuralNetworkEncoding);
-		this->size = genome.bodyEncoding(SIZE);
-		this->agility = genome.bodyEncoding(FLEXIBILITY);
-		this->vision = size * SIZE_VISION_CORRELATION + VISION_BASE;
-		this->maxSpeed = speedFormula(size);
+		setSize( genome.bodyEncoding[SIZE]);
+		this->agility = genome.bodyEncoding[FLEXIBILITY];
+		this->vision =getRadius() * SIZE_VISION_CORRELATION + VISION_BASE;
+		this->maxSpeed = speedFormula(getSize());
+
 	}
 	~Organism() {
 

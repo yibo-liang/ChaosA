@@ -83,16 +83,22 @@ main {
 #include <random>
 #include <algorithm>
 #include <iterator>
+#include <time.h>
 #include <iostream>
 #include <functional>
 
+#define ID_INTERFACE -1
+#define ID_ORGANISM 0
+#define ID_FOOD 1
+
+#define FRAME_RATE 30
 #define SIZE 0
 #define FLEXIBILITY 1
 
 using std::vector;
 using std::string;
 using uint = uint32_t;
-using floatBase = float;
+using floatBase = double;
 using std::cout;
 using std::cin;
 using std::endl;
@@ -102,11 +108,17 @@ enum CellType
 	input, output, bias, hidden
 };
 
-#define FRAME_RATE 30
-#define SIZE_BASE 10
-#define SIZE_VISION_CORRELATION 5
-#define VISION_BASE 10
-#define SPEED_BASE 15
+#define MIN_SIZE 1.0
+#define SIZE_BASE 10.0
+#define SIZE_VISION_CORRELATION 2.50
+#define VISION_BASE 10.0
+#define SPEED_BASE 15.0
+#define PERCEPTION_NUMBER 18
+#define INIT_HUNGER 100.0
+
+#define PI std::_Pi
+#ifndef MY_FUNCS
+#define MY_FUNCS
 
 inline floatBase speedFormula(floatBase size) {
 	return pow(size, (-0.3)) * 2 * SPEED_BASE;
@@ -115,6 +127,17 @@ inline floatBase speedFormula(floatBase size) {
 inline floatBase get_random()
 {
 	static std::default_random_engine e;
+
 	static std::uniform_real_distribution<floatBase> dis(0, 1); // rage 0 - 1
-	return dis(e);
+	floatBase r = dis(e);
+	return r;
 }
+
+inline floatBase hungerFormula(floatBase size, floatBase speed, floatBase turning) {
+	speed = abs(speed);
+	turning = abs(turning);
+	floatBase base = (size / SIZE_BASE);
+	return  1.5 + base*0.1;
+}
+#endif // !MY_FUNCS
+

@@ -15,11 +15,11 @@ struct matrix
 };
 
 
-inline floatBase readMatrix(matrix m, int row, int col) {
+inline floatBase readMatrix(matrix & m, int row, int col) {
 	return m.dataPtr[col + row*m.O];
 }
 
-inline void writeMatrix(matrix m, floatBase val, int row, int col) {
+inline void writeMatrix(matrix & m, floatBase val, int row, int col) {
 	m.dataPtr[col + row*m.O] = val;
 }
 
@@ -35,6 +35,7 @@ public:
 		vector<floatBase> result = input;
 		for (int i = 0; i < this->weightMatrices.size(); i++) {
 			result = activateLayer(weightMatrices[i], result);
+
 		}
 		activationResult = result;
 		return activationResult;
@@ -47,7 +48,7 @@ public:
 		networkStruct = network.networkStruct;
 		int ptr_offset = 0;
 		weightMatrices.push_back(matrix(&dataVec[ptr_offset], networkStruct[0], networkStruct[1]));
-		for (int i = 1; i < networkStruct.size(); i++) {
+		for (int i = 1; i < networkStruct.size() - 1; i++) {
 			int input_n = networkStruct[i];
 			int output_n = networkStruct[i + 1];
 			int matrixSize = input_n*output_n;
@@ -112,11 +113,11 @@ public:
 private:
 
 	inline floatBase activationFunction(floatBase x) {
-		return tanh(x);
+		return  x / (1 + abs(x));;
 	}
 
 	vector<floatBase> activationResult;
-	inline vector<floatBase> activateLayer(matrix m, vector<floatBase> vals) {
+	vector<floatBase> activateLayer(matrix & m, vector<floatBase> & vals) {
 		/*if (vals.size() != m.I) {
 			cout << "ERROR :: Input number does not match layer neuron number." << endl;
 			throw 20;
@@ -129,6 +130,11 @@ private:
 				sum += vals[i] * w;
 			}
 			result[o] = activationFunction(sum);
+			if (std::isnan(result[o])) {
+				cout << sum << endl;
+				throw 11;
+			}
+
 		}
 		return result;
 	}

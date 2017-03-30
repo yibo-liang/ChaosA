@@ -99,26 +99,40 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>D:\CPP Lib\SFML-2.4.2-windows-vc14-64-bit\SFML-2.4.2\include</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <OpenMPSupport>true</OpenMPSupport>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <OmitFramePointers>false</OmitFramePointers>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>sfml-main.lib;sfml-window-s.lib;winmm.lib;sfml-system-s.lib;sfml-graphics-s.lib;opengl32.lib;freetype.lib;jpeg.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\CPP Lib\SFML-2.4.2-windows-vc14-64-bit\SFML-2.4.2\lib</AdditionalLibraryDirectories>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Food.h" />
     <ClInclude Include="Genome.hpp" />
     <ClInclude Include="IObject.hpp" />
     <ClInclude Include="NeuralNetwork.hpp" />
     <ClInclude Include="Organism.hpp" />
     <ClInclude Include="Pool.hpp" />
     <ClInclude Include="Shared_Header.hpp" />
+    <ClInclude Include="Visualisation.h" />
+    <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="World.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
