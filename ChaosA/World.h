@@ -4,6 +4,7 @@
 #include "IObject.hpp"
 #include "Food.h"
 #include "Organism.hpp"
+#include <math.h>
 
 #define P_NOTHING -1
 #define P_ORGANISM_SAME_SPECIES 0
@@ -58,11 +59,11 @@ public:
 	//step the world for one tick, return false if all organism are dead
 	bool step() {
 		int threadn = 8;
-#pragma omp parallel for num_threads(threadn)
+//#pragma omp parallel for num_threads(threadn)
 		for (int i = 0; i < orgs.size(); i++) {
 			organismPercept(i);
 		}
-#pragma omp parallel for num_threads(threadn)
+//#pragma omp parallel for num_threads(threadn)
 		for (int i = 0; i < orgs.size(); i++) {
 			organismStep(i);
 		}
@@ -157,23 +158,13 @@ private:
 	}
 
 	inline bool on_line(point & p, vline line) {
-		floatBase k1, b1;
-
-		if (line.end.x == line.start.x) {
-			line.end.x += 0.000001;
-		}
-		k1 = (line.end.y - line.start.y) / (line.end.x - line.start.x);
-		b1 = line.start.y - line.start.x*k1;
-		if (p.x >= std::min(line.start.x, line.end.x) - 0.01
-			&& p.x <= std::max(line.start.x, line.end.x) + 0.01) {
-			floatBase y = k1*p.x + b1;
-			floatBase dy = abs(y - p.y);
-			if (dy <= 0.1) {
-				return true;
-			}
+		point va = point(line.start.x - line.end.x, line.start.y - line.end.y);
+		point vb = point(p.x - line.end.x, p.y - line.end.y);
+		floatBase area = va.x * vb.y - va.y *vb.x;
+		if (abs(area) < 0.0001) {
+			return true;
 		}
 		return false;
-
 	}
 
 	inline point intersectLines(vline l1, vline l2) {
@@ -205,7 +196,7 @@ private:
 		x = -(b2 - b1) / (k2 - k1);
 		y = k1 * x + b1;
 
-		point p;
+		point p(x,y);
 		bool o1 = on_line(p, l1);
 		bool o2 = on_line(p, l2);
 
@@ -275,39 +266,52 @@ private:
 
 	}
 
+	inline floatBase inc_angle(floatBase r1, floatBase r2) {
+
+		r1 = fmod(r1, PI * 2);
+		r2 = fmod(r2, PI * 2);
+
+		floatBase dr = r2 - r1;
+		dr = dr > PI ? dr - 2 * PI : dr;
+		dr = dr < -PI ? dr + 2 * PI : dr;
+		return dr;
+	}
+
 	inline void organismPerceptObject(Organism & org, IObject & other_obj, vector<floatBase> & perceptions, int type) {
 
 		floatBase vision = org.vision + org.getRadius();
 		floatBase cx = org.x, cy = org.y;
 		floatBase dist = distance(org, other_obj) - other_obj.getRadius() - org.getRadius();
 		if (dist > org.vision) return;
-		for (int p = 0; p < PERCEPTION_NUMBER; p++) {
-			floatBase r, lx, ly;
-			r = (floatBase)p / (floatBase)PERCEPTION_NUMBER * 2 * PI + org.direction;
-			lx = cx + cos(r)*vision;
-			ly = cy + sin(r)*vision;
-			vline visionLine(cx, cy, lx, ly); //virtual vision line, anything intersect with it will be seen as percepted
-			point vpoint = tangentObjLine(other_obj, visionLine);
 
-			if (vpoint.valid) {
-				floatBase vdist = distance(org.x, org.y, vpoint.x, vpoint.y);
-				if (perceptions[p] > vdist) {
-					if (vdist < org.getRadius()) vdist = org.getRadius();
-					perceptions[p] = vdist;
-					perceptions[PERCEPTION_NUMBER + p] = type;
-					perceptions[PERCEPTION_NUMBER * 2 + p] = other_obj.getSize();
-				}
-			}
+		floatBase ox = other_obj.x;
+		floatBase oy = other_obj.y;
 
-		}
+		floatBase dx = ox - cx;
+		floatBase dy = oy - cy;
+
+		floatBase p_part = (floatBase)1 / (floatBase)PERCEPTION_NUMBER * PI;
+		floatBase p_angle = atan2(dy, dx);
+		floatBase start_p_angle = org.direction - PI / 2;
+		floatBase p_relative_angle = inc_angle(p_angle, org.direction);
+		if (abs(p_relative_angle) > PI / 2) return;
+		floatBase tmp = inc_angle(start_p_angle, p_angle);
+		int k = tmp / abs(p_part);
+		floatBase vdist = distance(cx, cy, ox, oy);
+		perceptions[k] = vdist - other_obj.getRadius();
+		perceptions[PERCEPTION_NUMBER + k] = type;
+		perceptions[PERCEPTION_NUMBER * 2 + k] = other_obj.getSize();
+
 	}
 
 	inline void organismPerceptEdges(Organism & org, vector<floatBase> & perceptions) {
+		
+
 		floatBase vision = org.vision + org.getRadius();
 		floatBase cx = org.x, cy = org.y;
 		for (int p = 0; p < PERCEPTION_NUMBER; p++) {
 			floatBase r, lx, ly;
-			r = (floatBase)p / (floatBase)PERCEPTION_NUMBER * 2 * PI + org.direction;
+			r = ((floatBase)p + 0.5) / (floatBase)PERCEPTION_NUMBER * PI + org.direction - PI / 2;
 			lx = cx + cos(r)*vision;
 			ly = cy + sin(r)*vision;
 			vline visionLine(cx, cy, lx, ly); //virtual vision line, anything intersect with it will be seen as percepted
@@ -340,6 +344,7 @@ private:
 		for (int i = 0; i < orgs.size(); i++) {
 			if (i != k) {
 				Organism & other = orgs[i];
+				if (!other.exist) continue;
 				int species = P_ORGANISM_SAME_SPECIES;
 				if (other.getTypeID() == org.getTypeID()) {
 					species = P_ORGANISM_OTHER_SPECIES;
@@ -349,7 +354,7 @@ private:
 		}
 		for (int i = 0; i < foods.size(); i++) {
 			Food & other = foods[i];
-			organismPerceptObject(org, other, perceptions, P_FOOD);
+			if (other.exist) organismPerceptObject(org, other, perceptions, P_FOOD);
 		}
 		organismPerceptEdges(org, perceptions);
 		org.perception = perceptions;
@@ -368,6 +373,9 @@ private:
 
 		//org.acceleration = action[ACTION_ACCELERATE] * timeScale;
 		org.direction += action[ACTION_TURN] * org.agility * timeScale;
+		org.direction = org.direction > PI ? (org.direction - PI * 2) : org.direction;
+		org.direction = org.direction < -PI ? (org.direction + PI * 2) : org.direction;
+
 		org.speed = action[ACTION_ACCELERATE] * org.maxSpeed;
 		//if (std::isnan(org.speed)) {
 		//	cout << "ERROR" << endl;
@@ -429,7 +437,7 @@ private:
 		for (int i = 0; i < orgs.size(); i++) {
 			if (i != k) {
 				Organism & other = orgs[i];
-				if (other.exist && other.getSpecies()!=org.getSpecies())
+				if (other.exist && other.getSpecies() != org.getSpecies())
 					_interact(org, other);
 			}
 		}

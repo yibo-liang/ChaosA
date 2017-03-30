@@ -113,7 +113,7 @@ enum CellType
 #define SIZE_VISION_CORRELATION 2.50
 #define VISION_BASE 10.0
 #define SPEED_BASE 15.0
-#define PERCEPTION_NUMBER 18
+#define PERCEPTION_NUMBER 5
 #define INIT_HUNGER 100.0
 
 #define PI std::_Pi
