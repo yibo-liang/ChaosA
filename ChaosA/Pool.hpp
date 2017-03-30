@@ -79,8 +79,8 @@ public:
 					continue;
 				}
 				if (k < s.size() * 0.5) {
-					Genome A = tournament(s, 2);
-					Genome B = tournament(s, 2);
+					Genome A = tournament(s, 3);
+					Genome B = tournament(s, 3);
 					Genome C = (crossover(A, B));
 					mutation(C);
 
@@ -88,7 +88,7 @@ public:
 					newS.push_back(C);
 				}
 				else {
-					Genome & A = tournament(s, 2);
+					Genome & A = tournament(s, 3);
 
 					cout << "push fitness=" << A.fitness << endl;
 					newS.push_back(A);
@@ -137,14 +137,68 @@ private:
 		return get_random() > 0.5 ? f1 : f2;
 	}
 
+	inline void crossover_NN(Genome & result, const Genome & g2) {
+		floatBase cLayerRate = 0.1;
+		floatBase cNeuronRate = 0.2;
+		floatBase cWeightRate = 0.4;
+		if (get_random() < cLayerRate) {
+			vector<int> & netstruct = result.neuralStruct;
+			//select weight matrix between random two adjecent layers
+			int l = (netstruct.size() - 1) * get_random(); //layer number, weight matrix between l and l+1 will be copied
+
+			int pointer_pos = 0;
+			//skip layer matrix before selected
+			for (int i = 0; i < l; i++) {
+				int input_n = netstruct[i];
+				int output_n = netstruct[i + 1];
+				pointer_pos += input_n*output_n;
+			}
+			int weightMatrix_size = netstruct[l] * netstruct[l + 1];
+
+			for (int i = 0; i < weightMatrix_size; i++) {
+				result.neuralNetworkEncoding[pointer_pos + i] = g2.neuralNetworkEncoding[pointer_pos + i];
+			}
+
+		}
+		if (get_random() < cNeuronRate) {
+			vector<int> & netstruct = result.neuralStruct;
+			//select weight matrix between random two adjecent layers
+			int l = (netstruct.size() - 1) * get_random() + 1;//layer number, start from first non-input layer 
+			int n = netstruct[l] * get_random(); //neuron number of the layer
+
+
+			int pointer_pos = 0;
+			//skip layer matrix before this layer
+			for (int i = 0; i < l - 1; i++) {
+				int input_n = netstruct[i];
+				int output_n = netstruct[i + 1];
+				pointer_pos += input_n*output_n;
+			}
+			int input_n = netstruct[l - 1];
+			//skip neuron weights before this neuron on the same layer
+			for (int i = 0; i < n; i++) {
+				pointer_pos += input_n;
+			}
+
+			for (int i = 0; i < input_n; i++) {
+				result.neuralNetworkEncoding[pointer_pos + i] = g2.neuralNetworkEncoding[pointer_pos + i];
+			}
+
+
+		}
+		if (get_random() < cWeightRate) {
+			int w = result.neuralNetworkEncoding.size() * get_random();
+			result.neuralNetworkEncoding[w] = g2.neuralNetworkEncoding[w];
+		}
+
+	}
+
 	Genome crossover(const Genome & g1, const Genome & g2) {
 		Genome result(g1);
 		for (int i = 0; i < g1.bodyEncoding.size(); i++) {
 			result.bodyEncoding[i] = crossover_float(g1.bodyEncoding[i], g2.bodyEncoding[i]);
 		}
-		for (int i = 0; i < g1.neuralNetworkEncoding.size(); i++) {
-			result.neuralNetworkEncoding[i] = crossover_float(g1.neuralNetworkEncoding[i], g2.neuralNetworkEncoding[i]);
-		}
+		crossover_NN(result, g2);
 		return result;
 	}
 
@@ -161,7 +215,7 @@ private:
 	inline floatBase pertubate(floatBase a) {
 
 		if (get_random() < pertubationRate) {
-			floatBase p = pertubationRatio * abs(a);
+			floatBase p = pertubationRatio;
 			floatBase min = a - p;
 			return min + p * 2 * get_random();
 		}

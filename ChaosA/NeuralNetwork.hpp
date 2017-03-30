@@ -69,15 +69,15 @@ public:
 		}
 
 
-		// First create an instance of an engine.
-		random_device rnd_device;
-		// Specify the engine and distribution.
-		mt19937 mersenne_engine(rnd_device());
-		uniform_real_distribution<floatBase> dist(-2, 2);
-		auto gen = std::bind(dist, mersenne_engine);
+		//// First create an instance of an engine.
+		//random_device rnd_device;
+		//// Specify the engine and distribution.
+		//mt19937 mersenne_engine(rnd_device());
+		//uniform_real_distribution<floatBase> dist(-2, 2);
+		//auto gen = std::bind(dist, mersenne_engine);
 
 		dataVec = vector<floatBase>(size, 0);
-		generate(begin(dataVec), end(dataVec), gen);
+		//generate(begin(dataVec), end(dataVec), gen);
 
 		//init weight matrices
 		this->networkStruct = networkStruct;
@@ -113,7 +113,7 @@ public:
 private:
 
 	inline floatBase activationFunction(floatBase x) {
-		return  x / (1 + abs(x));;
+		return  tanh(x);
 	}
 
 	vector<floatBase> activationResult;

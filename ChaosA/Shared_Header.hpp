@@ -137,7 +137,7 @@ inline floatBase hungerFormula(floatBase size, floatBase speed, floatBase turnin
 	speed = abs(speed);
 	turning = abs(turning);
 	floatBase base = (size / SIZE_BASE);
-	return  1.5 + base*0.1;
+	return  1.5;
 }
 #endif // !MY_FUNCS
 

@@ -100,7 +100,7 @@ public:
 		//all orgs are dead, copy lifespan as fitness
 		//cout << "All dead" << endl;
 		for (int i = 0; i < orgs.size(); i++) {
-			orgs[i].genome.fitness = (floatBase)orgs[i].lifespan / (floatBase)FRAME_RATE * 0.25;
+			orgs[i].genome.fitness = (floatBase)orgs[i].lifespan / (floatBase)FRAME_RATE * 0.25 + orgs[i].foodGet * 10;
 		}
 
 
