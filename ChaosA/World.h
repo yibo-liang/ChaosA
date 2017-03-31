@@ -6,11 +6,11 @@
 #include "Organism.hpp"
 #include <math.h>
 
-#define P_NOTHING -1
+#define P_NOTHING -100
 #define P_ORGANISM_SAME_SPECIES 0
-#define P_ORGANISM_OTHER_SPECIES 1
-#define P_FOOD 3
-#define P_EDGE 4
+#define P_ORGANISM_OTHER_SPECIES 100
+#define P_FOOD 300
+#define P_EDGE 800
 
 #define ACTION_ACCELERATE 0
 #define ACTION_TURN 1
@@ -57,15 +57,25 @@ public:
 		return foods;
 	}
 	//step the world for one tick, return false if all organism are dead
-	bool step() {
-		int threadn = 8;
-//#pragma omp parallel for num_threads(threadn)
-		for (int i = 0; i < orgs.size(); i++) {
-			organismPercept(i);
+
+	bool step(bool visualising) {
+		if (!visualising) {
+#pragma omp parallel for
+			for (int i = 0; i < orgs.size(); i++) {
+				organismPercept(i);
+			}
+#pragma omp parallel for
+			for (int i = 0; i < orgs.size(); i++) {
+				organismStep(i);
+			}
 		}
-//#pragma omp parallel for num_threads(threadn)
-		for (int i = 0; i < orgs.size(); i++) {
-			organismStep(i);
+		else {
+			for (int i = 0; i < orgs.size(); i++) {
+				organismPercept(i);
+			}
+			for (int i = 0; i < orgs.size(); i++) {
+				organismStep(i);
+			}
 		}
 		for (int i = 0; i < orgs.size(); i++) {
 			organismInteract(i);
@@ -92,7 +102,7 @@ public:
 		stepCount++;
 
 		//cout << "food n=" << food_count << endl;
-		if (stepCount < FRAME_RATE * 180)
+		//if (stepCount < FRAME_RATE * 1800)
 			for (int i = 0; i < orgs.size(); i++) {
 				//cout << orgs[i].exist << endl;
 				if (orgs[i].exist) return true;
@@ -100,10 +110,10 @@ public:
 			}
 		//all orgs are dead, copy lifespan as fitness
 		//cout << "All dead" << endl;
-		for (int i = 0; i < orgs.size(); i++) {
-			orgs[i].genome.fitness = (floatBase)orgs[i].lifespan / (floatBase)FRAME_RATE * 0.25 + orgs[i].foodGet * 10;
-		}
 
+		for (int i = 0; i < orgs.size(); i++) {
+			orgs[i].genome.fitness = org_Fitness(orgs[i]);
+		}
 
 
 		return false;
@@ -129,6 +139,7 @@ public:
 		org.x = width*get_random();
 		org.y = height*get_random();
 		org.direction = std::_Pi * 2 * get_random();
+		org.genome.fitness = 0;
 		orgs.push_back(org);
 	}
 
@@ -139,6 +150,11 @@ private:
 	vector<Organism> orgs;
 	vector<Food> foods;
 	vector<vline> worldEdges;
+
+	inline floatBase org_Fitness(Organism & org) {
+		return org.foodGet * 100 + org.lifespan / FRAME_RATE;
+	}
+
 	//Eucludean
 	inline floatBase distance(floatBase x1, floatBase y1, floatBase x2, floatBase y2) {
 		floatBase dx = x1 - x2;
@@ -267,6 +283,12 @@ private:
 
 	}
 
+	inline floatBase normalise_angle(floatBase r) {
+		r = fmod(r, PI * 2);
+		r = r > PI ? r - 2 * PI : r;
+		r = r < -PI ? r + 2 * PI : r;
+		return r;
+	}
 	//absolute difference in angle r1 , r2
 	inline floatBase inc_angle(floatBase r1, floatBase r2) {
 
@@ -274,10 +296,22 @@ private:
 		r2 = fmod(r2, PI * 2);
 
 		floatBase dr = r2 - r1;
-		dr = dr > PI ? dr - 2 * PI : dr;
-		dr = dr < -PI ? dr + 2 * PI : dr;
+
+		return normalise_angle(dr);
+	}
+
+	//absolute difference in angle r1 , r2 clockwise
+	inline floatBase inc_angle_clockwise(floatBase r1, floatBase r2) {
+
+		r1 = normalise_angle(r1);
+		r2 = normalise_angle(r2);
+
+		floatBase dr = r2 - r1;
+		dr = dr < 0 ? dr + 2 * PI : dr;
 		return dr;
 	}
+
+
 
 	inline void organismPerceptObject(Organism & org, IObject & other_obj, vector<floatBase> & perceptions, int type) {
 
@@ -297,13 +331,15 @@ private:
 		floatBase start_p_angle = org.direction - PERCEPT_RANGE / 2;
 		floatBase p_relative_angle = inc_angle(p_angle, org.direction);
 		if (abs(p_relative_angle) > PERCEPT_RANGE / 2) return;
-		floatBase tmp = inc_angle(start_p_angle, p_angle);
+		floatBase tmp = (inc_angle_clockwise(start_p_angle, p_angle));
 		int k = tmp / abs(p_part);
+		//if (k < 0) throw 1010;
 		floatBase vdist = distance(cx, cy, ox, oy);
 		perceptions[k] = vdist - other_obj.getRadius();
-		//cout << "k=" << k << ", vdist=" << vdist << endl;
-		perceptions[PERCEPTION_NUMBER + k] = type;
-		perceptions[PERCEPTION_NUMBER * 2 + k] = other_obj.getSize();
+
+
+		perceptions[PERCEPTION_NUMBER + k] = type ;
+		perceptions[PERCEPTION_NUMBER * 2 + k] = (other_obj.getSize() - org.getSize()) * 100;
 
 	}
 
@@ -325,8 +361,8 @@ private:
 					if (perceptions[p] > vdist) {
 						if (vdist < org.getRadius()) vdist = org.getRadius();
 						perceptions[p] = vdist;
-						perceptions[PERCEPTION_NUMBER + p] = P_EDGE;
-						perceptions[PERCEPTION_NUMBER * 2 + p] = 0;
+						perceptions[PERCEPTION_NUMBER + p] = P_EDGE ;
+						perceptions[PERCEPTION_NUMBER * 2 + p] = 0 ;
 					}
 				}
 			}
@@ -355,7 +391,7 @@ private:
 				if (other.getSpecies() != org.getSpecies()) {
 					species = P_ORGANISM_OTHER_SPECIES;
 				}
-				//organismPerceptObject(org, other, perceptions, species);
+				organismPerceptObject(org, other, perceptions, species);
 			}
 		}
 		for (int i = 0; i < foods.size(); i++) {
@@ -382,7 +418,7 @@ private:
 		org.direction = org.direction > PI ? (org.direction - PI * 2) : org.direction;
 		org.direction = org.direction < -PI ? (org.direction + PI * 2) : org.direction;
 
-		org.speed += action[ACTION_ACCELERATE] * timeScale;
+		org.speed = action[ACTION_ACCELERATE] * org.maxSpeed;
 		//if (std::isnan(org.speed)) {
 		//	cout << "ERROR" << endl;
 		//	//throw 500;
@@ -400,16 +436,16 @@ private:
 
 
 		if (org.x < r) {
-			org.x = r; org.hunger -= timeScale * 10;
+			org.x = r; org.hunger -= timeScale * 2;
 		}
 		if (org.x > width - r) {
-			org.x = width - r; org.hunger -= timeScale * 10;
+			org.x = width - r; org.hunger -= timeScale * 2;
 		}
 		if (org.y < r) {
-			org.y = r; org.hunger -= timeScale * 10;
+			org.y = r; org.hunger -= timeScale * 2;
 		}
 		if (org.y > height - r) {
-			org.y = height - r; org.hunger -= timeScale * 10;
+			org.y = height - r; org.hunger -= timeScale * 2;
 		}
 		floatBase consumption = hungerFormula(org.getSize(), org.speed, action[ACTION_TURN]);
 		//cout << consumption * timeScale<<", "<< org.hunger<< endl;
@@ -432,7 +468,7 @@ private:
 				if (org.getSize() > other.getSize()*0.95) { //eat the other organism if size is much larger
 					other.exist = false;
 					org.foodGet++;
-					org.hunger += pow(other.getSize(), 2) * 0.5; // e=1/2mv^2, where v is however related to  :)
+					org.hunger += pow(other.getSize(), 2); // e=1/2mv^2, where v is however related to  :)
 				}
 
 			}

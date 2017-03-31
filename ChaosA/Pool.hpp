@@ -15,13 +15,14 @@ public:
 
 	vector<Species> species;
 
-	bool elitism = true;
+	bool elitism = false;
 	int speciesCount;
 	int tournamentSize = 2;
 	vector<int> speciesSizes;
-	floatBase strongMutationRate = 0.02;
-	floatBase pertubationRate = 0.5;
-	floatBase pertubationRatio = 1;
+	floatBase crossoverRate = 0.3;
+	floatBase strongMutationRate = 0.05;
+	floatBase pertubationRate = 0.3;
+	floatBase pertubationRatio = 1.2;
 
 	int generation = 0;
 	vector<std::pair<floatBase, floatBase>> getFitness() {
@@ -81,8 +82,13 @@ public:
 				}
 				if (k < s.size() * 0.5) {
 					Genome A = tournament(s, tournamentSize);
-					Genome B = tournament(s, tournamentSize);
-					Genome C = (crossover(A, B));
+					Genome C = A;
+					if (get_random() < crossoverRate)
+					{
+						Genome B = tournament(s, tournamentSize);
+						C = (crossover(A, B));
+					}
+
 					mutation(C);
 
 					//cout << "push fitness=" << C.fitness << endl;
@@ -139,7 +145,7 @@ private:
 	}
 
 	inline void crossover_NN(Genome & result, const Genome & g2) {
-		floatBase cLayerRate = 0.03;
+		floatBase cLayerRate = 0.01;
 		floatBase cNeuronRate = 0.04;
 		floatBase cWeightRate = 0.8;
 		if (get_random() < cLayerRate) {
@@ -206,9 +212,14 @@ private:
 	inline floatBase strongMutate(floatBase a) {
 
 		if (get_random() < strongMutationRate) {
-			floatBase min = -abs(a)*1.1;
-			floatBase d = abs(a) * 2 * 1.1;
-			return min + d*get_random();
+			if (get_random() < 0.5) {
+				return -a;
+			}
+			else {
+				floatBase min = -abs(a)*1.1;
+				floatBase d = abs(a) * 2 * 1.1;
+				return min + d*get_random();
+			}
 		}
 		return a;
 	}
@@ -232,8 +243,8 @@ private:
 	}
 
 	void mutation(Genome & g) {
-		g.bodyEncoding[SIZE] = pertubate(g.bodyEncoding[SIZE]);
-		if (g.bodyEncoding[SIZE] < MIN_SIZE) g.bodyEncoding[SIZE] = MIN_SIZE;
+		//g.bodyEncoding[SIZE] = pertubate(g.bodyEncoding[SIZE]);
+		//if (g.bodyEncoding[SIZE] < MIN_SIZE) g.bodyEncoding[SIZE] = MIN_SIZE;
 
 		for (int i = 0; i < g.neuralNetworkEncoding.size(); i++) {
 			g.neuralNetworkEncoding[i] = mutate(g.neuralNetworkEncoding[i]);

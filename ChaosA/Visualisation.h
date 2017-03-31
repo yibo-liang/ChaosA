@@ -14,6 +14,9 @@ class Visualisation
 {
 public:
 
+	int windowWidth = 1600;
+	int windowHeight = 960;
+
 	std::shared_ptr<Window*> window;
 	std::thread * eventThread;
 	std::shared_ptr<bool> windowCreated;
@@ -23,6 +26,62 @@ public:
 	sf::Color colorFood = sf::Color(50, 250, 250);
 	sf::Color colorEdge = sf::Color(255, 255, 255);
 
+	floatBase maxFitness = DBL_MIN;
+	floatBase minFitness = DBL_MAX;
+	std::vector<vector<floatBase>> averageFitnessRecord, maxFitnessRecord;
+
+	void renderFitness(vector<std::pair<floatBase, floatBase>> newfitness) {
+		for (int s = 0; s < newfitness.size(); s++) {
+			floatBase max = newfitness[s].first;
+			floatBase avr = newfitness[s].second;
+			if (maxFitnessRecord.size() == 0) {
+				maxFitnessRecord = vector<vector<floatBase>>(newfitness.size());
+				averageFitnessRecord = vector<vector<floatBase>>(newfitness.size());
+			}
+			maxFitnessRecord[s].push_back(max);
+			averageFitnessRecord[s].push_back(avr);
+			if (max > maxFitness) maxFitness = max;
+			if (avr < minFitness) minFitness = avr;
+		}
+		Window * w = *window.get();
+		w->clear();
+
+		floatBase dfit = maxFitness - minFitness;
+		for (int s = 0; s < maxFitnessRecord.size(); s++) {
+
+			sf::VertexArray linemax(sf::LinesStrip, maxFitnessRecord[s].size() + 1);
+			sf::VertexArray lineavr(sf::LinesStrip, maxFitnessRecord[s].size() + 1);
+
+
+			linemax[0].position = sf::Vector2f(0, windowHeight);
+			lineavr[0].position = sf::Vector2f(0, windowHeight);
+			for (int i = 0; i < maxFitnessRecord[s].size(); i++) {
+				floatBase maxFit = maxFitnessRecord[s][i];
+				floatBase avrFit = averageFitnessRecord[s][i];
+
+				sf::Vector2f maxp(
+					(i + 1) / (floatBase)maxFitnessRecord[s].size() * (floatBase)windowWidth,
+					windowHeight-(maxFit - minFitness) / dfit * (floatBase)windowHeight
+					);
+				linemax[i + 1].position = maxp;
+				linemax[i + 1].color = speciesColours[s];
+				linemax[i + 1].color.a = 180;
+
+				sf::Vector2f avrp(
+					(i + 1) / (floatBase)averageFitnessRecord[s].size() * (floatBase)windowWidth,
+					windowHeight-(avrFit - minFitness) / dfit * (floatBase)windowHeight
+					);
+				lineavr[i + 1].position = avrp;
+				lineavr[i + 1].color = speciesColours[s];
+
+			}
+			w->draw(linemax);
+			w->draw(lineavr);
+
+		}
+
+		w->display();
+	}
 
 	void render(World & world) {
 		if (!*windowCreated) return;
@@ -54,6 +113,8 @@ public:
 		speciesColours.push_back(sf::Color(150, 50, 250));
 		speciesColours.push_back(sf::Color(100, 190, 150));
 		speciesColours.push_back(sf::Color(200, 130, 90));
+		speciesColours.push_back(sf::Color(30, 160, 250));
+		speciesColours.push_back(sf::Color(0, 180, 150));
 
 
 	};
@@ -146,7 +207,7 @@ private:
 	}
 
 	void windowEventThread() {
-		window = std::make_shared<Window *>(new sf::RenderWindow(sf::VideoMode(1600, 960), "SFML works!", sf::Style::Titlebar));
+		window = std::make_shared<Window *>(new sf::RenderWindow(sf::VideoMode(windowWidth, windowHeight), "SFML works!", sf::Style::Close));
 		Window * w = *window.get();
 		w->setFramerateLimit(FRAME_RATE);
 		w->setVerticalSyncEnabled(true);

@@ -19,7 +19,7 @@ public:
 		setSize(food.getSize());
 	}
 	Food() {
-		setSize(get_random() * SIZE_BASE * 1);
+		setSize((get_random()*0.5 + 0.5) * SIZE_BASE);
 	};
 	~Food() {};
 

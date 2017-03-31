@@ -134,17 +134,17 @@ private:
 
 				floatBase tmp = vals[i] * w;
 				sum += tmp;
-				if (std::isnan(w) || std::isnan(vals[i])) {
+				/*if (std::isnan(w) || std::isnan(vals[i])) {
 					cout << w << "," << vals[i]<< endl;
 					throw 11;
-				}
+				}*/
 
 			}
 			result[o] = activationFunction(sum);
-			if (std::isnan(result[o])) {
+			/*if (std::isnan(result[o])) {
 				cout << sum << endl;
 				throw 11;
-			}
+			}*/
 
 		}
 		return result;

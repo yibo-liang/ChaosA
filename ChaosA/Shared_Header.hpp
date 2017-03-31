@@ -103,21 +103,17 @@ using std::cout;
 using std::cin;
 using std::endl;
 
-enum CellType
-{
-	input, output, bias, hidden
-};
 
 #define MIN_SIZE 1.0
-#define SIZE_BASE 10.0
-#define SIZE_VISION_CORRELATION 2.50
-#define VISION_BASE 10.0
+#define SIZE_BASE 5
+#define SIZE_VISION_CORRELATION 3
+#define VISION_BASE 6.0
 #define SPEED_BASE 15.0
 #define PERCEPTION_NUMBER 9
 #define INIT_HUNGER 100.0
 
 #define PI std::_Pi
-#define PERCEPT_RANGE std::_Pi 
+#define PERCEPT_RANGE std::_Pi * 2
 #ifndef MY_FUNCS
 #define MY_FUNCS
 
@@ -137,8 +133,8 @@ inline floatBase get_random()
 inline floatBase hungerFormula(floatBase size, floatBase speed, floatBase turning) {
 	speed = abs(speed);
 	turning = abs(turning);
-	floatBase base = (size / SIZE_BASE) + (speed ) / ( SPEED_BASE) / 3 ;
-	return  base / 2;
+	floatBase base = (size / SIZE_BASE) + (speed ) / ( SPEED_BASE) / 3 + 3 ;
+	return  base;
 }
 #endif // !MY_FUNCS
 

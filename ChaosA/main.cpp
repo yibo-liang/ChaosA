@@ -9,8 +9,8 @@ int main() {
 	int foodCount = 50;
 	Visualisation visual;
 	Pool pool(
-		3,
-		vector<int>({ 30, 30 ,30 }),
+		1,
+		vector<int>({ 150, 30 ,30 }),
 		vector<int>({ PERCEPTION_NUMBER * 3 + 2, 5, 5, 2 })
 	);
 
@@ -27,17 +27,20 @@ int main() {
 		for (int i = 0; i < foodCount; i++) {
 			world.addFood();
 		}
-		while (world.step()) {
-			if (*visual.fastMode) {
+		while (world.step(!*visual.fastMode)) {
+			if (!*visual.fastMode) {
 				visual.render(world);
 			}
 			if (visual.exit != NULL && *visual.exit) break;
 		}
-
+		if (*visual.fastMode) {
+			visual.renderFitness(pool.getFitness());
+		}
 		cout << "Generateion:" << pool.generation << endl;
 		for (auto & fitness : pool.getFitness()) {
-			cout << "f max:" << fitness.first << "\t\tf avr:" << fitness.second<<",\t";
+			cout << "f max:" << fitness.first << ", f avr:" << fitness.second<<",\t";
 		}
+		
 		cout << endl;
 		pool.nextGeneration();
 
