@@ -4,9 +4,12 @@
 #include "Shared_Header.hpp"
 struct matrix
 {
-	floatBase * dataPtr; //size I*O, access dataPtr[o row][i col],  is weight of (i input node) to (o output node)
-	matrix(floatBase * start, int I, int O) {
-		dataPtr = start;
+	vector<floatBase> matrixData; //size I*O, access dataPtr[o row][i col],  is weight of (i input node) to (o output node)
+	matrix(floatBase * dataVec, int I, int O) {
+		matrixData = vector<floatBase>(I*O);
+		for (int i = 0; i < I*O; i++) {
+			matrixData[i] = dataVec[i];
+		}
 		this->I = I;
 		this->O = O;
 	}
@@ -16,11 +19,11 @@ struct matrix
 
 
 inline floatBase readMatrix(matrix & m, int row, int col) {
-	return m.dataPtr[col + row*m.O];
+	return m.matrixData[col + row*m.O];
 }
 
 inline void writeMatrix(matrix & m, floatBase val, int row, int col) {
-	m.dataPtr[col + row*m.O] = val;
+	m.matrixData[col + row*m.O] = val;
 }
 
 class Network
@@ -117,7 +120,7 @@ private:
 	}
 
 	vector<floatBase> activationResult;
-	vector<floatBase> activateLayer(matrix & m, vector<floatBase> & vals) {
+	vector<floatBase> activateLayer(matrix & m, vector<floatBase> vals) {
 		/*if (vals.size() != m.I) {
 			cout << "ERROR :: Input number does not match layer neuron number." << endl;
 			throw 20;
@@ -127,7 +130,15 @@ private:
 			floatBase sum = 0;
 			for (int i = 0; i < vals.size(); i++) {
 				floatBase w = readMatrix(m, o, i);
-				sum += vals[i] * w;
+
+
+				floatBase tmp = vals[i] * w;
+				sum += tmp;
+				if (std::isnan(w) || std::isnan(vals[i])) {
+					cout << w << "," << vals[i]<< endl;
+					throw 11;
+				}
+
 			}
 			result[o] = activationFunction(sum);
 			if (std::isnan(result[o])) {

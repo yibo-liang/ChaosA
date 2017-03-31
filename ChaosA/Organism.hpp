@@ -40,6 +40,7 @@ public:
 	}
 
 	Organism(const Organism& o) : genome(o.genome) {
+		this->foodGet = o.foodGet;
 		this->lifespan = o.lifespan;
 		this->hunger = o.hunger;
 		this->acceleration = o.acceleration;

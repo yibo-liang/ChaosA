@@ -113,15 +113,16 @@ enum CellType
 #define SIZE_VISION_CORRELATION 2.50
 #define VISION_BASE 10.0
 #define SPEED_BASE 15.0
-#define PERCEPTION_NUMBER 5
+#define PERCEPTION_NUMBER 9
 #define INIT_HUNGER 100.0
 
 #define PI std::_Pi
+#define PERCEPT_RANGE std::_Pi 
 #ifndef MY_FUNCS
 #define MY_FUNCS
 
 inline floatBase speedFormula(floatBase size) {
-	return pow(size, (-0.3)) * 2 * SPEED_BASE;
+	return  4 * SPEED_BASE / (size + 4);
 }
 
 inline floatBase get_random()
@@ -136,8 +137,8 @@ inline floatBase get_random()
 inline floatBase hungerFormula(floatBase size, floatBase speed, floatBase turning) {
 	speed = abs(speed);
 	turning = abs(turning);
-	floatBase base = (size / SIZE_BASE);
-	return  1.5;
+	floatBase base = (size / SIZE_BASE) + (speed ) / ( SPEED_BASE) / 3 ;
+	return  base / 2;
 }
 #endif // !MY_FUNCS
 

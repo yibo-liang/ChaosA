@@ -92,12 +92,12 @@ public:
 		stepCount++;
 
 		//cout << "food n=" << food_count << endl;
+		if (stepCount < FRAME_RATE * 180)
+			for (int i = 0; i < orgs.size(); i++) {
+				//cout << orgs[i].exist << endl;
+				if (orgs[i].exist) return true;
 
-		for (int i = 0; i < orgs.size(); i++) {
-			//cout << orgs[i].exist << endl;
-			if (orgs[i].exist) return true;
-
-		}
+			}
 		//all orgs are dead, copy lifespan as fitness
 		//cout << "All dead" << endl;
 		for (int i = 0; i < orgs.size(); i++) {
@@ -161,8 +161,9 @@ private:
 		point va = point(line.start.x - line.end.x, line.start.y - line.end.y);
 		point vb = point(p.x - line.end.x, p.y - line.end.y);
 		floatBase area = va.x * vb.y - va.y *vb.x;
-		if (abs(area) < 0.0001) {
-			return true;
+		if (abs(area) < 0.001) {
+			return p.x >= std::min(line.start.x, line.end.x) && p.x <= std::max(line.start.x, line.end.x)
+				&& p.y >= std::min(line.start.y, line.end.y) && p.y <= std::max(line.start.y, line.end.y);
 		}
 		return false;
 	}
@@ -196,7 +197,7 @@ private:
 		x = -(b2 - b1) / (k2 - k1);
 		y = k1 * x + b1;
 
-		point p(x,y);
+		point p(x, y);
 		bool o1 = on_line(p, l1);
 		bool o2 = on_line(p, l2);
 
@@ -266,6 +267,7 @@ private:
 
 	}
 
+	//absolute difference in angle r1 , r2
 	inline floatBase inc_angle(floatBase r1, floatBase r2) {
 
 		r1 = fmod(r1, PI * 2);
@@ -290,28 +292,29 @@ private:
 		floatBase dx = ox - cx;
 		floatBase dy = oy - cy;
 
-		floatBase p_part = (floatBase)1 / (floatBase)PERCEPTION_NUMBER * PI;
+		floatBase p_part = (floatBase)1 / (floatBase)PERCEPTION_NUMBER * PERCEPT_RANGE;
 		floatBase p_angle = atan2(dy, dx);
-		floatBase start_p_angle = org.direction - PI / 2;
+		floatBase start_p_angle = org.direction - PERCEPT_RANGE / 2;
 		floatBase p_relative_angle = inc_angle(p_angle, org.direction);
-		if (abs(p_relative_angle) > PI / 2) return;
+		if (abs(p_relative_angle) > PERCEPT_RANGE / 2) return;
 		floatBase tmp = inc_angle(start_p_angle, p_angle);
 		int k = tmp / abs(p_part);
 		floatBase vdist = distance(cx, cy, ox, oy);
 		perceptions[k] = vdist - other_obj.getRadius();
+		//cout << "k=" << k << ", vdist=" << vdist << endl;
 		perceptions[PERCEPTION_NUMBER + k] = type;
 		perceptions[PERCEPTION_NUMBER * 2 + k] = other_obj.getSize();
 
 	}
 
 	inline void organismPerceptEdges(Organism & org, vector<floatBase> & perceptions) {
-		
+
 
 		floatBase vision = org.vision + org.getRadius();
 		floatBase cx = org.x, cy = org.y;
 		for (int p = 0; p < PERCEPTION_NUMBER; p++) {
 			floatBase r, lx, ly;
-			r = ((floatBase)p + 0.5) / (floatBase)PERCEPTION_NUMBER * PI + org.direction - PI / 2;
+			r = ((floatBase)p + 0.5) / (floatBase)PERCEPTION_NUMBER * PERCEPT_RANGE + org.direction - PERCEPT_RANGE / 2;
 			lx = cx + cos(r)*vision;
 			ly = cy + sin(r)*vision;
 			vline visionLine(cx, cy, lx, ly); //virtual vision line, anything intersect with it will be seen as percepted
@@ -335,8 +338,11 @@ private:
 		//compute the visual input for i th organism, for its neural network
 		Organism & org = orgs[k];
 		if (!org.exist) return;
-		vector<floatBase> perceptions(PERCEPTION_NUMBER * 3 + 1, P_NOTHING);
+		vector<floatBase> perceptions(PERCEPTION_NUMBER * 3 + 2, P_NOTHING);
+
 		perceptions[perceptions.size() - 1] = org.getSize();
+		perceptions[perceptions.size() - 2] = org.speed;
+
 		for (int i = 0; i < PERCEPTION_NUMBER; i++) {
 			perceptions[i] = org.vision;
 		}
@@ -346,10 +352,10 @@ private:
 				Organism & other = orgs[i];
 				if (!other.exist) continue;
 				int species = P_ORGANISM_SAME_SPECIES;
-				if (other.getTypeID() == org.getTypeID()) {
+				if (other.getSpecies() != org.getSpecies()) {
 					species = P_ORGANISM_OTHER_SPECIES;
 				}
-				organismPerceptObject(org, other, perceptions, species);
+				//organismPerceptObject(org, other, perceptions, species);
 			}
 		}
 		for (int i = 0; i < foods.size(); i++) {
@@ -376,13 +382,13 @@ private:
 		org.direction = org.direction > PI ? (org.direction - PI * 2) : org.direction;
 		org.direction = org.direction < -PI ? (org.direction + PI * 2) : org.direction;
 
-		org.speed = action[ACTION_ACCELERATE] * org.maxSpeed;
+		org.speed += action[ACTION_ACCELERATE] * timeScale;
 		//if (std::isnan(org.speed)) {
 		//	cout << "ERROR" << endl;
 		//	//throw 500;
 
 		//}
-		//org.speed = std::max(std::min(org.speed, org.maxSpeed), (floatBase)0.0);
+		org.speed = std::max(std::min(org.speed, org.maxSpeed), (floatBase)0.0);
 
 		floatBase r = org.getRadius();
 		float dx = cos(org.direction) * org.speed * timeScale;
@@ -392,10 +398,19 @@ private:
 		//cout << "mx=" << dx << ", my=" << dy << ", speed=" << org.speed << endl;
 		//cout << "dir=" << org.direction << endl;
 
-		if (org.x < r) org.x = r;
-		if (org.x > width - r) org.x = width - r;
-		if (org.y < r)org.y = r;
-		if (org.y > height - r) org.y = height - r;
+
+		if (org.x < r) {
+			org.x = r; org.hunger -= timeScale * 10;
+		}
+		if (org.x > width - r) {
+			org.x = width - r; org.hunger -= timeScale * 10;
+		}
+		if (org.y < r) {
+			org.y = r; org.hunger -= timeScale * 10;
+		}
+		if (org.y > height - r) {
+			org.y = height - r; org.hunger -= timeScale * 10;
+		}
 		floatBase consumption = hungerFormula(org.getSize(), org.speed, action[ACTION_TURN]);
 		//cout << consumption * timeScale<<", "<< org.hunger<< endl;
 		if (consumption < 0) {
@@ -417,7 +432,7 @@ private:
 				if (org.getSize() > other.getSize()*0.95) { //eat the other organism if size is much larger
 					other.exist = false;
 					org.foodGet++;
-					org.hunger += pow(other.getSize(), 2); // e=1/2mv^2, where v is however related to  :)
+					org.hunger += pow(other.getSize(), 2) * 0.5; // e=1/2mv^2, where v is however related to  :)
 				}
 
 			}

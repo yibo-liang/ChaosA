@@ -15,10 +15,11 @@ public:
 	Food(const Food & food) {
 		this->x = food.x;
 		this->y = food.y;
+		this->exist = food.exist;
 		setSize(food.getSize());
 	}
 	Food() {
-		setSize(get_random() * SIZE_BASE / 2);
+		setSize(get_random() * SIZE_BASE * 1);
 	};
 	~Food() {};
 

@@ -17,7 +17,7 @@ public:
 		this->radius = sqrt(size/ 2 / std::_Pi);
 	}
 
-	const floatBase getRadius() const {
+	floatBase getRadius() const {
 		return radius;
 	}
 

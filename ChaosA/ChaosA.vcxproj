@@ -115,8 +115,8 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>D:\CPP Lib\SFML-2.4.2-windows-vc14-64-bit\SFML-2.4.2\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
-      <OpenMPSupport>true</OpenMPSupport>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <OpenMPSupport>false</OpenMPSupport>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <OmitFramePointers>false</OmitFramePointers>
       <WholeProgramOptimization>false</WholeProgramOptimization>

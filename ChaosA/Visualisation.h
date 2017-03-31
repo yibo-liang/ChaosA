@@ -24,17 +24,17 @@ public:
 	sf::Color colorEdge = sf::Color(255, 255, 255);
 
 
-	void render(const World & world) {
+	void render(World & world) {
 		if (!*windowCreated) return;
 		Window * w = *window.get();
 		w->clear();
 		/*  Drawing of the world here */
-		const vector<Organism> & orgs = world.getOrgs();
+		vector<Organism> orgs = world.getOrgs();
 		for (int i = 0; i < orgs.size(); i++) {
 			if (orgs.at(i).exist)
 				drawOrganism(orgs.at(i), w);
 		}
-		const vector<Food> & foods = world.getFoods();
+		vector<Food> foods = world.getFoods();
 		for (int i = 0; i < foods.size(); i++) {
 			if (foods.at(i).exist)
 				drawFood(foods.at(i), w);
@@ -69,7 +69,7 @@ private:
 	vector<sf::Color> speciesColours;
 
 
-	void drawOrganism(const Organism & org, Window * w) {
+	void drawOrganism(const Organism org, Window * w) {
 		floatBase r = org.getRadius()*scale;
 		floatBase x = (org.x + disposition.x)*scale;
 		floatBase y = (org.y + disposition.y)*scale;
@@ -89,10 +89,10 @@ private:
 
 		if (!*showPerception) return;
 
-		floatBase p_part = (floatBase)1 / (floatBase)PERCEPTION_NUMBER * PI;
+		floatBase p_part = (floatBase)1 / (floatBase)PERCEPTION_NUMBER * PERCEPT_RANGE;
 		for (int i = 0; i < PERCEPTION_NUMBER; i++) {
-			floatBase l = org.perception[i] * scale;
-			floatBase rotation = (floatBase)i / (floatBase)PERCEPTION_NUMBER * PI + org.direction - PI / 2;
+			floatBase l = org.perception.at(i) * scale;
+			floatBase rotation = (floatBase)i / (floatBase)PERCEPTION_NUMBER * PERCEPT_RANGE + org.direction - PERCEPT_RANGE / 2;
 
 			Vector2f p1(x + l*cos(rotation), y + l*sin(rotation));
 			Vector2f p2(x + l*cos(rotation + p_part), y + l*sin(rotation + p_part));
@@ -126,7 +126,7 @@ private:
 
 	}
 
-	void drawFood(const Food & org, Window * w) {
+	void drawFood(const Food org, Window * w) {
 		floatBase r = org.getRadius()*scale;
 		floatBase x = (org.x + disposition.x)*scale - r;
 		floatBase y = (org.y + disposition.y)*scale - r;

@@ -15,12 +15,13 @@ public:
 
 	vector<Species> species;
 
-	bool elitism = false;
+	bool elitism = true;
 	int speciesCount;
+	int tournamentSize = 2;
 	vector<int> speciesSizes;
 	floatBase strongMutationRate = 0.02;
 	floatBase pertubationRate = 0.5;
-	floatBase pertubationRatio = 0.05;
+	floatBase pertubationRatio = 1;
 
 	int generation = 0;
 	vector<std::pair<floatBase, floatBase>> getFitness() {
@@ -63,7 +64,7 @@ public:
 		for (int i = 0; i < species.size(); i++) {
 			Species & s = species[i];
 			Species newS;
-			cout << "species " << i << endl;
+			//cout << "species " << i << endl;
 			for (int k = 0; k < s.size(); k++) {
 				if (elitism && k == 0) {
 					floatBase bestfit = 0;
@@ -74,23 +75,23 @@ public:
 							bestfit = s[b].fitness;
 						}
 					}
-					cout << "push fitness=" << s[bid].fitness << endl;
+					//cout << "push fitness=" << s[bid].fitness << endl;
 					newS.push_back(s[bid]);
 					continue;
 				}
 				if (k < s.size() * 0.5) {
-					Genome A = tournament(s, 3);
-					Genome B = tournament(s, 3);
+					Genome A = tournament(s, tournamentSize);
+					Genome B = tournament(s, tournamentSize);
 					Genome C = (crossover(A, B));
 					mutation(C);
 
-					cout << "push fitness=" << C.fitness << endl;
+					//cout << "push fitness=" << C.fitness << endl;
 					newS.push_back(C);
 				}
 				else {
-					Genome & A = tournament(s, 3);
+					Genome & A = tournament(s, tournamentSize);
 
-					cout << "push fitness=" << A.fitness << endl;
+					//cout << "push fitness=" << A.fitness << endl;
 					newS.push_back(A);
 				}
 			}
@@ -138,9 +139,9 @@ private:
 	}
 
 	inline void crossover_NN(Genome & result, const Genome & g2) {
-		floatBase cLayerRate = 0.1;
-		floatBase cNeuronRate = 0.2;
-		floatBase cWeightRate = 0.4;
+		floatBase cLayerRate = 0.03;
+		floatBase cNeuronRate = 0.04;
+		floatBase cWeightRate = 0.8;
 		if (get_random() < cLayerRate) {
 			vector<int> & netstruct = result.neuralStruct;
 			//select weight matrix between random two adjecent layers
@@ -231,11 +232,8 @@ private:
 	}
 
 	void mutation(Genome & g) {
-		for (int i = 0; i < g.bodyEncoding.size(); i++) {
-			g.bodyEncoding[i] = pertubate(g.bodyEncoding[i]);
-		}
+		g.bodyEncoding[SIZE] = pertubate(g.bodyEncoding[SIZE]);
 		if (g.bodyEncoding[SIZE] < MIN_SIZE) g.bodyEncoding[SIZE] = MIN_SIZE;
-		if (g.bodyEncoding[FLEXIBILITY] < 0) g.bodyEncoding[FLEXIBILITY] = 0;
 
 		for (int i = 0; i < g.neuralNetworkEncoding.size(); i++) {
 			g.neuralNetworkEncoding[i] = mutate(g.neuralNetworkEncoding[i]);

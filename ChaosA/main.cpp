@@ -6,12 +6,12 @@ int main() {
 
 
 	// create the window
-	int foodCount = 20;
+	int foodCount = 50;
 	Visualisation visual;
 	Pool pool(
-		1,
-		vector<int>({ 40,40 }),
-		vector<int>({ PERCEPTION_NUMBER * 3 + 1, 5, 5, 2 })
+		3,
+		vector<int>({ 30, 30 ,30 }),
+		vector<int>({ PERCEPTION_NUMBER * 3 + 2, 5, 5, 2 })
 	);
 
 	while (true) {
@@ -29,10 +29,7 @@ int main() {
 		}
 		while (world.step()) {
 			if (*visual.fastMode) {
-
-				cout << "rendering" << endl;
 				visual.render(world);
-
 			}
 			if (visual.exit != NULL && *visual.exit) break;
 		}

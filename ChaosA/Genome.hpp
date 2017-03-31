@@ -52,14 +52,16 @@ private:
 		}
 		neuralNetworkEncoding = vector<floatBase>(size, 0);
 
-		//// First create an instance of an engine.
-		//random_device rnd_device;
-		//// Specify the engine and distribution.
-		//mt19937 mersenne_engine(rnd_device());
-		//uniform_real_distribution<floatBase> dist(-2, 2);
-		//auto gen = std::bind(dist, mersenne_engine);
+		// First create an instance of an engine.
+		random_device rnd_device;
+		// Specify the engine and distribution.
+		mt19937 mersenne_engine(rnd_device());
+		int in = networkStruct[0];
+		int out = networkStruct[networkStruct.size() - 1];
+		uniform_real_distribution<floatBase> dist(-2 / (in + out), 2*(in + out));
+		auto gen = std::bind(dist, mersenne_engine);
 
-		//generate(begin(neuralNetworkEncoding), end(neuralNetworkEncoding), gen);
+		generate(begin(neuralNetworkEncoding), end(neuralNetworkEncoding), gen);
 	}
 };
 #endif // !GENOME
