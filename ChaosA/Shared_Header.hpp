@@ -108,7 +108,7 @@ using std::endl;
 #define SIZE_BASE 5
 #define SIZE_VISION_CORRELATION 3
 #define VISION_BASE 6.0
-#define SPEED_BASE 15.0
+#define SPEED_BASE 30.0
 #define PERCEPTION_NUMBER 9
 #define INIT_HUNGER 100.0
 
@@ -117,24 +117,26 @@ using std::endl;
 #ifndef MY_FUNCS
 #define MY_FUNCS
 
+static std::default_random_engine e;// initialize Mersennes' twister using rd to generate the seed
+static std::mt19937 rng(e());
+
 inline floatBase speedFormula(floatBase size) {
 	return  4 * SPEED_BASE / (size + 4);
 }
 
 inline floatBase get_random()
 {
-	static std::default_random_engine e;
 
 	static std::uniform_real_distribution<floatBase> dis(0, 1); // rage 0 - 1
-	floatBase r = dis(e);
+	floatBase r = dis(rng);
 	return r;
 }
 
 inline floatBase hungerFormula(floatBase size, floatBase speed, floatBase turning) {
 	speed = abs(speed);
 	turning = abs(turning);
-	floatBase base = (size / SIZE_BASE) + (speed ) / ( SPEED_BASE) / 3 + 3 ;
-	return  base;
+	floatBase base = (size / SIZE_BASE)/5 + (speed ) / ( SPEED_BASE) / 20 + 3 ;
+	return  base/2;
 }
 #endif // !MY_FUNCS
 

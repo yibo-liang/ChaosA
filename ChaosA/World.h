@@ -8,9 +8,9 @@
 
 #define P_NOTHING -100
 #define P_ORGANISM_SAME_SPECIES 0
-#define P_ORGANISM_OTHER_SPECIES 100
-#define P_FOOD 300
-#define P_EDGE 800
+#define P_FOOD 100
+#define P_EDGE 300
+#define P_ORGANISM_OTHER_SPECIES 500
 
 #define ACTION_ACCELERATE 0
 #define ACTION_TURN 1
@@ -46,8 +46,8 @@ public:
 	bool regenerateFood = true;
 	int stepCount = 0;
 
-	floatBase width = 160;
-	floatBase height = 90;
+	floatBase width = 480;
+	floatBase height = 270;
 
 	const vector<Organism> & getOrgs() const {
 		return orgs;
@@ -152,7 +152,7 @@ private:
 	vector<vline> worldEdges;
 
 	inline floatBase org_Fitness(Organism & org) {
-		return org.foodGet * 100 + org.lifespan / FRAME_RATE;
+		return org.foodGet * 10 + org.lifespan / FRAME_RATE;
 	}
 
 	//Eucludean
@@ -418,7 +418,7 @@ private:
 		org.direction = org.direction > PI ? (org.direction - PI * 2) : org.direction;
 		org.direction = org.direction < -PI ? (org.direction + PI * 2) : org.direction;
 
-		org.speed = action[ACTION_ACCELERATE] * org.maxSpeed;
+		org.speed += action[ACTION_ACCELERATE] * (org.maxSpeed * FRAME_RATE);
 		//if (std::isnan(org.speed)) {
 		//	cout << "ERROR" << endl;
 		//	//throw 500;

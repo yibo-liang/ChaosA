@@ -216,8 +216,8 @@ private:
 				return -a;
 			}
 			else {
-				floatBase min = -abs(a)*1.1;
-				floatBase d = abs(a) * 2 * 1.1;
+				floatBase min = -abs(a)*1.5;
+				floatBase d = abs(a) * 2 * 1.5;
 				return min + d*get_random();
 			}
 		}
@@ -242,9 +242,18 @@ private:
 		return f;
 	}
 
+	inline floatBase pertubateBody(floatBase a) {
+		if (get_random() < pertubationRate) {
+			floatBase p = 0.1;
+			floatBase min = a - p*0.5;
+			return min + p * 2 * get_random();
+		}
+		return a;
+	}
+
 	void mutation(Genome & g) {
-		//g.bodyEncoding[SIZE] = pertubate(g.bodyEncoding[SIZE]);
-		//if (g.bodyEncoding[SIZE] < MIN_SIZE) g.bodyEncoding[SIZE] = MIN_SIZE;
+		g.bodyEncoding[SIZE] = pertubateBody(g.bodyEncoding[SIZE]);
+		if (g.bodyEncoding[SIZE] < MIN_SIZE) g.bodyEncoding[SIZE] = MIN_SIZE;
 
 		for (int i = 0; i < g.neuralNetworkEncoding.size(); i++) {
 			g.neuralNetworkEncoding[i] = mutate(g.neuralNetworkEncoding[i]);

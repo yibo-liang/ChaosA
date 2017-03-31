@@ -20,12 +20,12 @@ public:
 	{
 		bodyEncoding = (vector<floatBase>(2));
 		bodyEncoding[SIZE] = SIZE_BASE;
-		bodyEncoding[FLEXIBILITY] = PI / 12;
+		bodyEncoding[FLEXIBILITY] = PI / 4;
 	};
 	Genome(const vector<int>& neuralStruct) {
 		bodyEncoding = (vector<floatBase>(2));
 		bodyEncoding[SIZE] = SIZE_BASE;
-		bodyEncoding[FLEXIBILITY] = PI / 12;
+		bodyEncoding[FLEXIBILITY] = PI / 4;
 		this->neuralStruct = neuralStruct;
 		init(neuralStruct);
 	}

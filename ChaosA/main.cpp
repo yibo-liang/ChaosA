@@ -6,11 +6,11 @@ int main() {
 
 
 	// create the window
-	int foodCount = 50;
+	int foodCount = 80;
 	Visualisation visual;
 	Pool pool(
-		1,
-		vector<int>({ 150, 30 ,30 }),
+		3,
+		vector<int>({ 30, 30, 30 }),
 		vector<int>({ PERCEPTION_NUMBER * 3 + 2, 5, 5, 2 })
 	);
 

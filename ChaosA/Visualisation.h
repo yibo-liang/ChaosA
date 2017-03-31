@@ -55,13 +55,13 @@ public:
 
 			linemax[0].position = sf::Vector2f(0, windowHeight);
 			lineavr[0].position = sf::Vector2f(0, windowHeight);
-			for (int i = 0; i < maxFitnessRecord[s].size(); i++) {
+			for (int i = 0; i < maxFitnessRecord[s].size(); i += 1) {
 				floatBase maxFit = maxFitnessRecord[s][i];
 				floatBase avrFit = averageFitnessRecord[s][i];
 
 				sf::Vector2f maxp(
 					(i + 1) / (floatBase)maxFitnessRecord[s].size() * (floatBase)windowWidth,
-					windowHeight-(maxFit - minFitness) / dfit * (floatBase)windowHeight
+					windowHeight - (maxFit - minFitness) / dfit * (floatBase)windowHeight
 					);
 				linemax[i + 1].position = maxp;
 				linemax[i + 1].color = speciesColours[s];
@@ -69,7 +69,7 @@ public:
 
 				sf::Vector2f avrp(
 					(i + 1) / (floatBase)averageFitnessRecord[s].size() * (floatBase)windowWidth,
-					windowHeight-(avrFit - minFitness) / dfit * (floatBase)windowHeight
+					windowHeight - (avrFit - minFitness) / dfit * (floatBase)windowHeight
 					);
 				lineavr[i + 1].position = avrp;
 				lineavr[i + 1].color = speciesColours[s];
@@ -84,9 +84,12 @@ public:
 	}
 
 	void render(World & world) {
+		
 		if (!*windowCreated) return;
 		Window * w = *window.get();
 		w->clear();
+		scale = (floatBase)windowHeight / world.height;
+		
 		/*  Drawing of the world here */
 		vector<Organism> orgs = world.getOrgs();
 		for (int i = 0; i < orgs.size(); i++) {
@@ -125,7 +128,7 @@ public:
 private:
 	Vector2f disposition;
 
-	floatBase scale = 10;
+	floatBase scale =0;
 
 	vector<sf::Color> speciesColours;
 
