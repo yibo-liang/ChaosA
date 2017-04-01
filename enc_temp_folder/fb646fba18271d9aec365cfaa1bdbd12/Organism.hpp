@@ -28,7 +28,6 @@ public:
 	floatBase agility; //max speed at turning around
 	//floatBase size; //Already defined in IObject
 
-	int id;
 
 	Genome & genome;
 
@@ -56,7 +55,6 @@ public:
 		
 		this->x = o.x;
 		this->y = o.y;
-		this->id = o.id;
 		setSize(o.getSize());
 	}
 

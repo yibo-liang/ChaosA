@@ -40,9 +40,6 @@ struct vline
 	}
 };
 
-using grid = vector<Organism *>;
-using collisionMatrix = vector<vector<grid>>;
-
 class World
 {
 public:
@@ -52,9 +49,6 @@ public:
 
 	floatBase width = 480;
 	floatBase height = 270;
-
-	collisionMatrix cmat;
-	floatBase gridSize;
 
 	const vector<Organism> & getOrgs() const {
 		return orgs;
@@ -146,34 +140,7 @@ public:
 		org.y = height*get_random();
 		org.direction = std::_Pi * 2 * get_random();
 		org.genome.fitness = 0;
-		org.id = orgs.size();
 		orgs.push_back(org);
-	}
-
-	void initGrid() {
-		//find out max perception + radius 
-
-		floatBase gridSize = 0;
-		for (int i = 0; i < orgs.size(); i++) {
-			Organism & org = orgs[i];
-			if (org.getRadius() + org.vision > gridSize) {
-				gridSize = org.getRadius + org.vision;
-			}
-		}
-
-		int gridWidth = ceil(width / gridSize);
-		int gridHeight = ceil(height / gridSize);
-
-		cmat = collisionMatrix(gridHeight, vector<grid>(gridWidth));
-		this->gridSize = gridSize;
-
-		for (int i = 0; i < orgs.size(); i++) {
-			Organism & org = orgs[i];
-			int grid_col = org.x / gridSize;
-			int grid_row = org.y / gridSize;
-			addToGrid(org, grid_col, grid_row);
-		}
-
 	}
 
 	World();
@@ -183,26 +150,6 @@ private:
 	vector<Organism> orgs;
 	vector<Food> foods;
 	vector<vline> worldEdges;
-
-	inline void addToGrid(Organism & org, int col, int row) {
-		cmat[row][col].push_back(&org);
-	}
-
-	inline void removeFromGrid(Organism & org, int col, int row) {
-		grid g = cmat[row][col];
-		for (int i = 0; i < g.size(); i++) {
-			Organism * orgPtr = g[i];
-			if (orgPtr->id == org.id) {
-				if (g.size() > 1) {
-					g.erase(g.begin() + i);
-					return;
-				}
-				else {
-					g.clear();
-				}
-			}
-		}
-	}
 
 	inline floatBase org_Fitness(Organism & org) {
 		return org.foodGet * 10 + org.lifespan / FRAME_RATE;

@@ -9,9 +9,7 @@ using Species = vector<Genome>;
 class Pool
 {
 public:
-
-	vector<int> neuralStruct;
-
+	
 
 	vector<Species> species;
 
@@ -42,15 +40,15 @@ public:
 		return result;
 	}
 
-	void init(int speciesCount, vector<int> & speciesSizes, vector<int> & neuralStruct) {
+	void init(int speciesCount, vector<int> & speciesSizes, vector<Genome> prototypes) {
 		this->speciesCount = speciesCount;
 		this->speciesSizes = speciesSizes;
-		this->neuralStruct = neuralStruct;
 
 		for (int i = 0; i < speciesCount; i++) {
 			vector<Genome> sp;
 			for (int s = 0; s < speciesSizes[i]; s++) {
-				Genome g(neuralStruct);
+				Genome g(prototypes[i]);
+				g.randomizeNeuralEncoding();
 				g.speciesID = i;
 				sp.push_back(g);
 			}
@@ -81,7 +79,7 @@ public:
 					continue;
 				}
 				if (k < s.size() * 0.5) {
-					Genome A = tournament(s, tournamentSize);
+					Genome & A = tournament(s, tournamentSize);
 					Genome C = A;
 					if (get_random() < crossoverRate)
 					{
@@ -90,7 +88,7 @@ public:
 					}
 
 					mutation(C);
-
+					C.fitness = 0;
 					//cout << "push fitness=" << C.fitness << endl;
 					newS.push_back(C);
 				}
@@ -98,6 +96,7 @@ public:
 					Genome & A = tournament(s, tournamentSize);
 
 					//cout << "push fitness=" << A.fitness << endl;
+					A.fitness = 0;
 					newS.push_back(A);
 				}
 			}
@@ -107,8 +106,8 @@ public:
 		generation++;
 	};
 
-	Pool(int speciesCount, vector<int> & speciesSizes, vector<int> & neuralStruct) {
-		init(speciesCount, speciesSizes, neuralStruct);
+	Pool(int speciesCount, vector<int> & speciesSizes, vector<Genome> prototypes) {
+		init(speciesCount, speciesSizes, prototypes);
 	}
 	Pool() {};
 	~Pool() {};
@@ -131,17 +130,17 @@ private:
 
 	inline floatBase crossover_float(floatBase f1, floatBase f2) {
 		/* Cross over between f1 and f2, is a random number between f1-0.1df and f2+0.1df */
-		/*floatBase min = f1 < f2 ? f1 : f2;
+		floatBase min = f1 < f2 ? f1 : f2;
 		floatBase max = f1 > f2 ? f1 : f2;
-		cout << "cf:" << min << "," << max << "=>";
+		//cout << "cf:" << min << "," << max << "=>";
 		floatBase df = max - min;
 		min = min - df * 0.1;
 		df = df * 1.2;
 		floatBase r = get_random() * df + min;
-		cout << r << endl;
+		//cout << r << endl;
 		return r;
-*/
-		return get_random() > 0.5 ? f1 : f2;
+
+		//return get_random() > 0.5 ? f1 : f2;
 	}
 
 	inline void crossover_NN(Genome & result, const Genome & g2) {
@@ -195,7 +194,7 @@ private:
 		}
 		if (get_random() < cWeightRate) {
 			int w = result.neuralNetworkEncoding.size() * get_random();
-			result.neuralNetworkEncoding[w] = g2.neuralNetworkEncoding[w];
+			result.neuralNetworkEncoding[w] = crossover_float(result.neuralNetworkEncoding[w], g2.neuralNetworkEncoding[w]);
 		}
 
 	}
@@ -252,8 +251,8 @@ private:
 	}
 
 	void mutation(Genome & g) {
-		g.bodyEncoding[SIZE] = pertubateBody(g.bodyEncoding[SIZE]);
-		if (g.bodyEncoding[SIZE] < MIN_SIZE) g.bodyEncoding[SIZE] = MIN_SIZE;
+		//g.bodyEncoding[SIZE] = pertubateBody(g.bodyEncoding[SIZE]);
+		//if (g.bodyEncoding[SIZE] < MIN_SIZE) g.bodyEncoding[SIZE] = MIN_SIZE;
 
 		for (int i = 0; i < g.neuralNetworkEncoding.size(); i++) {
 			g.neuralNetworkEncoding[i] = mutate(g.neuralNetworkEncoding[i]);

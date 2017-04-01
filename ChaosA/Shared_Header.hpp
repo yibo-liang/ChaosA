@@ -106,9 +106,9 @@ using std::endl;
 
 #define MIN_SIZE 1.0
 #define SIZE_BASE 5
-#define SIZE_VISION_CORRELATION 3
+#define SIZE_VISION_CORRELATION 6
 #define VISION_BASE 6.0
-#define SPEED_BASE 30.0
+#define SPEED_BASE 10.0
 #define PERCEPTION_NUMBER 9
 #define INIT_HUNGER 100.0
 
@@ -121,7 +121,7 @@ static std::default_random_engine e;// initialize Mersennes' twister using rd to
 static std::mt19937 rng(e());
 
 inline floatBase speedFormula(floatBase size) {
-	return  4 * SPEED_BASE / (size + 4);
+	return  size * 0.75 + SPEED_BASE;
 }
 
 inline floatBase get_random()
@@ -135,8 +135,9 @@ inline floatBase get_random()
 inline floatBase hungerFormula(floatBase size, floatBase speed, floatBase turning) {
 	speed = abs(speed);
 	turning = abs(turning);
-	floatBase base = (size / SIZE_BASE)/5 + (speed ) / ( SPEED_BASE) / 20 + 3 ;
-	return  base/2;
+	floatBase base = (size / SIZE_BASE) / 8 + (speed) / (SPEED_BASE) / 30 + 3;
+	return  3;
 }
+
 #endif // !MY_FUNCS
 

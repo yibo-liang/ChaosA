@@ -15,6 +15,7 @@ public:
 	vector<floatBase> neuralNetworkEncoding;
 	vector<int> neuralStruct;
 	int speciesID;
+	int startGeneration = 0;
 
 	Genome()
 	{
@@ -30,6 +31,7 @@ public:
 		init(neuralStruct);
 	}
 	Genome(const Genome& genome) {
+		this->startGeneration = genome.startGeneration;
 		this->fitness = genome.fitness;
 		this->bodyEncoding = genome.bodyEncoding;
 		this->neuralNetworkEncoding = genome.neuralNetworkEncoding;
@@ -39,6 +41,18 @@ public:
 	~Genome() {
 	};
 
+	void randomizeNeuralEncoding() {
+
+		using namespace std;
+		// First create an instance of an engine.
+		// Specify the engine and distribution.
+		int in = neuralStruct[0];
+		int out = neuralStruct[neuralStruct.size() - 1];
+		uniform_real_distribution<floatBase> dist(-2 / (in + out), 2 * (in + out));
+		auto gen = std::bind(dist, rng);
+
+		generate(begin(neuralNetworkEncoding), end(neuralNetworkEncoding), gen);
+	}
 private:
 	inline void init(const vector<int> & networkStruct) {
 
@@ -52,16 +66,9 @@ private:
 		}
 		neuralNetworkEncoding = vector<floatBase>(size, 0);
 
-		// First create an instance of an engine.
-		random_device rnd_device;
-		// Specify the engine and distribution.
-		mt19937 mersenne_engine(rnd_device());
-		int in = networkStruct[0];
-		int out = networkStruct[networkStruct.size() - 1];
-		uniform_real_distribution<floatBase> dist(-2 / (in + out), 2*(in + out));
-		auto gen = std::bind(dist, mersenne_engine);
-
-		generate(begin(neuralNetworkEncoding), end(neuralNetworkEncoding), gen);
+		randomizeNeuralEncoding();
 	}
+
+
 };
 #endif // !GENOME

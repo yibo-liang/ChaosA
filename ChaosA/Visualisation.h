@@ -23,14 +23,21 @@ public:
 	std::shared_ptr<bool> exit;
 	std::shared_ptr<bool> fastMode;
 	std::shared_ptr<bool> showPerception;
-	sf::Color colorFood = sf::Color(50, 250, 250);
-	sf::Color colorEdge = sf::Color(255, 255, 255);
+
+
+	std::shared_ptr<bool> showMaximum;
+	std::shared_ptr<bool> showAverage;
+
+	sf::Color colorFood = sf::Color(0, 255, 0);
+	sf::Color colorEdge = sf::Color(255, 244, 170);
 
 	floatBase maxFitness = DBL_MIN;
 	floatBase minFitness = DBL_MAX;
 	std::vector<vector<floatBase>> averageFitnessRecord, maxFitnessRecord;
 
-	void renderFitness(vector<std::pair<floatBase, floatBase>> newfitness) {
+	void renderFitness(vector<std::pair<floatBase, floatBase>> newfitness, World & world) {
+
+		updateScale(world);
 		for (int s = 0; s < newfitness.size(); s++) {
 			floatBase max = newfitness[s].first;
 			floatBase avr = newfitness[s].second;
@@ -62,21 +69,25 @@ public:
 				sf::Vector2f maxp(
 					(i + 1) / (floatBase)maxFitnessRecord[s].size() * (floatBase)windowWidth,
 					windowHeight - (maxFit - minFitness) / dfit * (floatBase)windowHeight
-					);
+				);
 				linemax[i + 1].position = maxp;
 				linemax[i + 1].color = speciesColours[s];
-				linemax[i + 1].color.a = 180;
+
+				if (*showAverage)
+					linemax[i + 1].color.a = 85;
 
 				sf::Vector2f avrp(
 					(i + 1) / (floatBase)averageFitnessRecord[s].size() * (floatBase)windowWidth,
 					windowHeight - (avrFit - minFitness) / dfit * (floatBase)windowHeight
-					);
+				);
 				lineavr[i + 1].position = avrp;
 				lineavr[i + 1].color = speciesColours[s];
 
 			}
-			w->draw(linemax);
-			w->draw(lineavr);
+			if (*showMaximum)
+				w->draw(linemax);
+			if (*showAverage)
+				w->draw(lineavr);
 
 		}
 
@@ -84,12 +95,11 @@ public:
 	}
 
 	void render(World & world) {
-		
 		if (!*windowCreated) return;
+		updateScale(world);
 		Window * w = *window.get();
 		w->clear();
-		scale = (floatBase)windowHeight / world.height;
-		
+
 		/*  Drawing of the world here */
 		vector<Organism> orgs = world.getOrgs();
 		for (int i = 0; i < orgs.size(); i++) {
@@ -106,12 +116,18 @@ public:
 
 		w->display();
 	}
+
 	Visualisation() {
 
 		windowCreated = std::make_shared<bool>(false);
 		exit = std::make_shared<bool>(false);
 		fastMode = std::make_shared<bool>(false);
 		showPerception = std::make_shared<bool>(false);
+
+
+		showMaximum = std::make_shared<bool>(true);
+		showAverage = std::make_shared<bool>(true);
+
 		eventThread = handleEvent();
 		speciesColours.push_back(sf::Color(150, 50, 250));
 		speciesColours.push_back(sf::Color(100, 190, 150));
@@ -128,15 +144,33 @@ public:
 private:
 	Vector2f disposition;
 
-	floatBase scale =0;
+	std::shared_ptr<floatBase> scale = std::make_shared<floatBase>(0);
 
 	vector<sf::Color> speciesColours;
 
+	inline void updateScale(World & world) {
+		Window * w = *window.get();
+		w->clear();
+		sf::Vector2u size = w->getSize();
+		windowWidth = size.x;
+		windowHeight = size.y;
+
+		floatBase vscale = (floatBase)windowHeight / world.height;
+		floatBase hscale = (floatBase)windowWidth / world.width;
+
+		*scale = std::min(vscale, hscale);
+
+
+	}
+
+	inline floatBase getScale() {
+		return (*scale);
+	}
 
 	void drawOrganism(const Organism org, Window * w) {
-		floatBase r = org.getRadius()*scale;
-		floatBase x = (org.x + disposition.x)*scale;
-		floatBase y = (org.y + disposition.y)*scale;
+		floatBase r = org.getRadius()*getScale();
+		floatBase x = (org.x + disposition.x)* getScale();
+		floatBase y = (org.y + disposition.y)* getScale();
 		CircleShape body(r);
 		body.setOutlineColor(speciesColours[org.getSpecies()]);
 		body.setFillColor(sf::Color(0, 0, 0, 0));
@@ -155,7 +189,7 @@ private:
 
 		floatBase p_part = (floatBase)1 / (floatBase)PERCEPTION_NUMBER * PERCEPT_RANGE;
 		for (int i = 0; i < PERCEPTION_NUMBER; i++) {
-			floatBase l = org.perception.at(i) * scale;
+			floatBase l = org.perception.at(i) * getScale();
 			floatBase rotation = (floatBase)i / (floatBase)PERCEPTION_NUMBER * PERCEPT_RANGE + org.direction - PERCEPT_RANGE / 2;
 
 			Vector2f p1(x + l*cos(rotation), y + l*sin(rotation));
@@ -176,11 +210,11 @@ private:
 			else if (abs(ptype - P_FOOD) < 0.1) {
 				pcolor = colorFood;
 			}
-			else if (abs(ptype - P_ORGANISM_OTHER_SPECIES) < 0.1) {
+			else if (abs(ptype - P_ORGANISM_THREAT) < 0.1) {
 				pcolor = sf::Color(255, 0, 0);
 			}
-			else if (abs(ptype - P_ORGANISM_SAME_SPECIES) < 0.1) {
-				pcolor = sf::Color(0, 255, 0);
+			else if (abs(ptype - P_NEUTRAL) < 0.1) {
+				pcolor = sf::Color(200, 200, 200);
 			}
 			pcolor.a = 100;
 
@@ -191,9 +225,9 @@ private:
 	}
 
 	void drawFood(const Food org, Window * w) {
-		floatBase r = org.getRadius()*scale;
-		floatBase x = (org.x + disposition.x)*scale - r;
-		floatBase y = (org.y + disposition.y)*scale - r;
+		floatBase r = org.getRadius()*getScale();
+		floatBase x = (org.x + disposition.x)*getScale() - r;
+		floatBase y = (org.y + disposition.y)*getScale() - r;
 		CircleShape body(r);
 		body.setFillColor(sf::Color(0, 0, 0, 0));
 		body.setOutlineColor(colorFood);
@@ -210,7 +244,7 @@ private:
 	}
 
 	void windowEventThread() {
-		window = std::make_shared<Window *>(new sf::RenderWindow(sf::VideoMode(windowWidth, windowHeight), "SFML works!", sf::Style::Close));
+		window = std::make_shared<Window *>(new sf::RenderWindow(sf::VideoMode(windowWidth, windowHeight), "SFML works!", sf::Style::Default));
 		Window * w = *window.get();
 		w->setFramerateLimit(FRAME_RATE);
 		w->setVerticalSyncEnabled(true);
@@ -237,9 +271,19 @@ private:
 					case sf::Keyboard::P:
 						*showPerception = !*showPerception;
 						break;
+					case sf::Keyboard::M:
+						*showMaximum = !*showMaximum;
+						break;
+					case sf::Keyboard::N:
+						*showAverage = !*showAverage;
+						break;
+
 					default:
 						break;
 					}
+				}
+				if (event.type == sf::Event::Resized) {
+					w->setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
 				}
 				//cout << "event" << endl;
 			}
