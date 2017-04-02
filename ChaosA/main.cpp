@@ -6,29 +6,32 @@ int main() {
 
 
 	// create the window
-	int foodCount = 50;
-	Visualisation visual;
+	int foodCount = 80;
 	int speciesCount = 3;
-	vector<int> neuralNetStruct({ PERCEPTION_NUMBER * 3 + 2, 5, 5, 2 });
+	vector<int> neuralNetStruct({ PERCEPTION_NUMBER * 3 + 2, 4, 4, 2 });
 	vector<Genome> prototypes(speciesCount, Genome(neuralNetStruct));
 	prototypes[0].startGeneration = 0;
-	prototypes[0].bodyEncoding[FLEXIBILITY] = PI / 3;
-	prototypes[1].startGeneration = 1500;
-	prototypes[1].bodyEncoding[SIZE] = SIZE_BASE * 1.75;
-	prototypes[1].bodyEncoding[FLEXIBILITY] = PI / 4;
-	prototypes[2].startGeneration = 3000;
-	prototypes[2].bodyEncoding[SIZE] = SIZE_BASE * 2.5;
-	prototypes[2].bodyEncoding[FLEXIBILITY] = PI / 5.5;
+	prototypes[0].bodyEncoding[FLEXIBILITY] = PI / 1.25;
+	prototypes[1].startGeneration = 0;
+	prototypes[1].bodyEncoding[SIZE] = SIZE_BASE * 3.5;
+	prototypes[1].bodyEncoding[FLEXIBILITY] = PI / 2;
+	prototypes[2].startGeneration = 0;
+	prototypes[2].bodyEncoding[SIZE] = SIZE_BASE * 5;
+	prototypes[2].bodyEncoding[FLEXIBILITY] = PI / 3;
 
-	Pool pool(
+	std::shared_ptr<Pool> poolPtr = std::make_shared<Pool>(
 		speciesCount,
-		vector<int>({ 70, 50, 30 }),
+		vector<int>({ 80, 35, 15 }),
 		prototypes
 	);
 
+	Pool & pool = *(poolPtr.get());
+
+	Visualisation visual(poolPtr);
 	while (true) {
 
 		World world;
+		world.regenerateFood = 100;
 		world.clearFood();
 		world.clearOrgs();
 		for (auto & s : pool.species) {
@@ -38,6 +41,7 @@ int main() {
 				}
 			}
 		}
+		world.initGrid();
 		for (int i = 0; i < foodCount; i++) {
 			world.addFood();
 		}
@@ -48,7 +52,7 @@ int main() {
 			if (visual.exit != NULL && *visual.exit) break;
 		}
 		if (*visual.fastMode) {
-			visual.renderFitness(pool.getFitness(),world);
+			visual.renderFitness(pool.getFitness(), world);
 		}
 		cout << "Generateion:" << pool.generation << endl;
 		for (auto & fitness : pool.getFitness()) {

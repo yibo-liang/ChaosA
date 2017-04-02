@@ -28,7 +28,6 @@ public:
 	floatBase agility; //max speed at turning around
 	//floatBase size; //Already defined in IObject
 
-	int id;
 
 	Genome & genome;
 

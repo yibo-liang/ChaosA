@@ -16,10 +16,14 @@ public:
 	bool elitism = false;
 	int speciesCount;
 	int tournamentSize = 2;
+	int speciesEvolveSwap = 1000;
+	int currentEvolveSpecies = 0;
+	bool swap = true;
+
 	vector<int> speciesSizes;
-	floatBase crossoverRate = 0.3;
+	floatBase crossoverRate = 0.5;
 	floatBase strongMutationRate = 0.05;
-	floatBase pertubationRate = 0.3;
+	floatBase pertubationRate = 0.5;
 	floatBase pertubationRatio = 1.2;
 
 	int generation = 0;
@@ -48,7 +52,7 @@ public:
 			vector<Genome> sp;
 			for (int s = 0; s < speciesSizes[i]; s++) {
 				Genome g(prototypes[i]);
-				g.randomizeNeuralEncoding();
+				//g.randomizeNeuralEncoding();
 				g.speciesID = i;
 				sp.push_back(g);
 			}
@@ -64,7 +68,16 @@ public:
 			Species & s = species[i];
 			Species newS;
 			//cout << "species " << i << endl;
-			for (int k = 0; k < s.size(); k++) {
+			if (swap && currentEvolveSpecies != i) {
+				for (int k = 0; k < s.size(); k++) {
+					s[k].fitness = 0;
+				}
+				newGen.push_back(s);
+				continue;
+			}
+			for (int k = 0; k < s.size(); k=newS.size()) {
+
+				
 				if (elitism && k == 0) {
 					floatBase bestfit = 0;
 					int bid;
@@ -74,28 +87,34 @@ public:
 							bestfit = s[b].fitness;
 						}
 					}
-					//cout << "push fitness=" << s[bid].fitness << endl;
 					newS.push_back(s[bid]);
 					continue;
 				}
 				if (k < s.size() * 0.5) {
 					Genome & A = tournament(s, tournamentSize);
-					Genome C = A;
 					if (get_random() < crossoverRate)
 					{
 						Genome B = tournament(s, tournamentSize);
-						C = (crossover(A, B));
+						std::pair<Genome, Genome> offspring = (crossover(A, B));
+						Genome & first = offspring.first;
+						Genome & second = offspring.second;
+						mutation(first);
+						mutation(second);
+
+						newS.push_back(first);
+						newS.push_back(second);
+					}
+					else {
+						Genome C(A);
+						mutation(C);
+						C.fitness = 0;
+						newS.push_back(C);
 					}
 
-					mutation(C);
-					C.fitness = 0;
-					//cout << "push fitness=" << C.fitness << endl;
-					newS.push_back(C);
 				}
 				else {
 					Genome & A = tournament(s, tournamentSize);
 
-					//cout << "push fitness=" << A.fitness << endl;
 					A.fitness = 0;
 					newS.push_back(A);
 				}
@@ -104,6 +123,9 @@ public:
 		}
 		species = newGen;
 		generation++;
+		if (generation % speciesEvolveSwap == 0) {
+			currentEvolveSpecies = (currentEvolveSpecies + 1) % speciesCount;
+		}
 	};
 
 	Pool(int speciesCount, vector<int> & speciesSizes, vector<Genome> prototypes) {
@@ -199,13 +221,23 @@ private:
 
 	}
 
-	Genome crossover(const Genome & g1, const Genome & g2) {
-		Genome result(g1);
+	std::pair<Genome, Genome> crossover(const Genome & g1, const Genome & g2) {
+		
+		Genome result1(g1);
 		for (int i = 0; i < g1.bodyEncoding.size(); i++) {
-			result.bodyEncoding[i] = crossover_float(g1.bodyEncoding[i], g2.bodyEncoding[i]);
+			result1.bodyEncoding[i] = crossover_float(g1.bodyEncoding[i], g2.bodyEncoding[i]);
 		}
-		crossover_NN(result, g2);
-		return result;
+		crossover_NN(result1, g2);
+		Genome result2(g2);
+		for (int i = 0; i < g1.bodyEncoding.size(); i++) {
+			result1.bodyEncoding[i] = crossover_float(g1.bodyEncoding[i], g2.bodyEncoding[i]);
+		}
+		crossover_NN(result2, g1);
+
+
+		result1.fitness = 0;
+		result2.fitness = 0;
+		return std::pair<Genome, Genome> (result1, result2);
 	}
 
 	inline floatBase strongMutate(floatBase a) {

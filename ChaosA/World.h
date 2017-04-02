@@ -8,9 +8,10 @@
 
 #define P_NOTHING -500
 #define P_FOOD -100
-#define P_NEUTRAL 0
-#define P_ORGANISM_THREAT 100
-#define P_EDGE 500
+#define P_NEUTRAL 100
+#define P_SAME_SPECIES 300
+#define P_ORGANISM_THREAT 500
+#define P_EDGE 700
 
 #define ACTION_ACCELERATE 0
 #define ACTION_TURN 1
@@ -40,20 +41,30 @@ struct vline
 	}
 };
 
-using grid = vector<Organism *>;
-using collisionMatrix = vector<vector<grid>>;
+using orgGrid = vector<Organism *>;
+using foodGrid = vector<Food *>;
+
+using orgMatrix = vector<vector<orgGrid>>;
+using foodMatrix = vector<vector<foodGrid>>;
 
 class World
 {
 public:
 	bool foodChain = true;
+	bool perceptNeutral = false;
 	int regenerateFood = 240;
 	int stepCount = 0;
 
 	floatBase width = 480;
 	floatBase height = 270;
 
-	collisionMatrix cmat;
+	orgMatrix orgMat;
+	foodMatrix foodMat;
+
+	int collisionMatrixWidth;
+	int collisionMatrixHeight;
+
+
 	floatBase gridSize;
 
 	const vector<Organism> & getOrgs() const {
@@ -89,22 +100,24 @@ public:
 		}
 		vector<Food> foodNew;
 		int food_count = 0;
-		for (int i = 0; i < foods.size() && regenerateFood>0; i++) {
+		for (int i = 0; i < foods.size(); i++) {
 			if (foods[i].exist) {
 				foodNew.push_back(foods[i]);
 				food_count++;
 			}
-			else {
+			else if (regenerateFood > 0) {
 				Food f;
 				f.x = get_random()*width;
 				f.y = get_random()*height;
 				foodNew.push_back(f);
 				regenerateFood--;
+
 			}
 
 		}
 		foods = foodNew;
-
+		clearGrid(foodMat);
+		addAllFoodsToGrid(foods, foodMat);
 		stepCount++;
 
 		//cout << "food n=" << food_count << endl;
@@ -137,6 +150,7 @@ public:
 		Food food;
 		food.x = width*get_random();
 		food.y = height*get_random();
+		food.id = 100000 + foods.size();
 		foods.push_back(food);
 
 	};
@@ -157,22 +171,23 @@ public:
 		for (int i = 0; i < orgs.size(); i++) {
 			Organism & org = orgs[i];
 			if (org.getRadius() + org.vision > gridSize) {
-				gridSize = org.getRadius + org.vision;
+				gridSize = org.getRadius() + org.vision;
 			}
 		}
 
 		int gridWidth = ceil(width / gridSize);
 		int gridHeight = ceil(height / gridSize);
 
-		cmat = collisionMatrix(gridHeight, vector<grid>(gridWidth));
+		collisionMatrixHeight = gridHeight;
+		collisionMatrixWidth = gridWidth;
+
+		foodMat = foodMatrix(gridHeight, vector<foodGrid>(gridWidth));
+		orgMat = orgMatrix(gridHeight, vector<orgGrid>(gridWidth));
+
 		this->gridSize = gridSize;
 
-		for (int i = 0; i < orgs.size(); i++) {
-			Organism & org = orgs[i];
-			int grid_col = org.x / gridSize;
-			int grid_row = org.y / gridSize;
-			addToGrid(org, grid_col, grid_row);
-		}
+		addAllOrgsToGrid(orgs, orgMat);
+		addAllFoodsToGrid(foods, foodMat);
 
 	}
 
@@ -184,28 +199,67 @@ private:
 	vector<Food> foods;
 	vector<vline> worldEdges;
 
-	inline void addToGrid(Organism & org, int col, int row) {
+	inline void addOrgToGrid(orgMatrix & cmat, Organism & org, int col, int row) {
+
 		cmat[row][col].push_back(&org);
 	}
 
-	inline void removeFromGrid(Organism & org, int col, int row) {
-		grid g = cmat[row][col];
+	inline void removeOrgFromGrid(orgMatrix & cmat, Organism & org, int col, int row) {
+		orgGrid & g = cmat[row][col];
+		orgGrid new_g;
 		for (int i = 0; i < g.size(); i++) {
-			Organism * orgPtr = g[i];
-			if (orgPtr->id == org.id) {
-				if (g.size() > 1) {
-					g.erase(g.begin() + i);
-					return;
-				}
-				else {
-					g.clear();
-				}
+			Organism * orgPtr = (g[i]);
+			if (orgPtr->id != org.id) {
+				new_g.push_back(orgPtr);
+			}
+		}
+		g = new_g;
+	}
+
+	inline void addFoodToGrid(foodMatrix & cmat, Food & org, int col, int row) {
+
+		cmat[row][col].push_back(&org);
+	}
+
+	inline void removeFoodFromGrid(foodMatrix & cmat, Food & org, int col, int row) {
+		foodGrid & g = cmat[row][col];
+		foodGrid new_g;
+		for (int i = 0; i < g.size(); i++) {
+			Food * orgPtr = (g[i]);
+			if (orgPtr->id != org.id) {
+				new_g.push_back(orgPtr);
+			}
+		}
+		g = new_g;
+	}
+
+	inline void clearGrid(foodMatrix & cmat) {
+		for (int row = 0; row < cmat.size(); row++) {
+			for (int col = 0; col < cmat[row].size(); col++) {
+				cmat[row][col].clear();
 			}
 		}
 	}
 
+	inline void  addAllOrgsToGrid(vector<Organism> & objs, orgMatrix & cmat) {
+		for (int i = 0; i < objs.size(); i++) {
+			Organism & obj = objs[i];
+			int grid_col = obj.x / gridSize;
+			int grid_row = obj.y / gridSize;
+			addOrgToGrid(cmat, obj, grid_col, grid_row);
+		}
+	}
+	inline void  addAllFoodsToGrid(vector<Food> & objs, foodMatrix & cmat) {
+		for (int i = 0; i < objs.size(); i++) {
+			Food & obj = objs[i];
+			int grid_col = obj.x / gridSize;
+			int grid_row = obj.y / gridSize;
+			addFoodToGrid(cmat, obj, grid_col, grid_row);
+		}
+	}
+
 	inline floatBase org_Fitness(Organism & org) {
-		return org.foodGet * 10 + org.lifespan / FRAME_RATE;
+		return org.lifespan / FRAME_RATE;
 	}
 
 	//Eucludean
@@ -372,6 +426,7 @@ private:
 		floatBase cx = org.x, cy = org.y;
 		floatBase dist = distance(org, other_obj) - other_obj.getRadius() - org.getRadius();
 		if (dist > org.vision) return;
+		if (!perceptNeutral && type == P_NEUTRAL) return;
 
 		floatBase ox = other_obj.x;
 		floatBase oy = other_obj.y;
@@ -433,44 +488,75 @@ private:
 		for (int i = 0; i < PERCEPTION_NUMBER; i++) {
 			perceptions[i] = org.vision;
 		}
-		// perception other oganisms
-		for (int i = 0; i < orgs.size(); i++) {
-			if (i != k) {
-				Organism & other = orgs[i];
-				int species = P_NEUTRAL;
-				if (!other.exist) continue;
-				if (foodChain) {
-					if (org.getSpecies() - other.getSpecies() == 1) {
-						species = P_FOOD;
-					}
-					else if (other.getSpecies() - org.getSpecies() == 1) {
-						species = P_ORGANISM_THREAT;
-					}
-				}
-				else {
-					if (other.getSpecies() != org.getSpecies()) {
-						species = P_ORGANISM_THREAT;
-					}
-				}
-				organismPerceptObject(org, other, perceptions, species);
-			}
-		}
-		for (int i = 0; i < foods.size(); i++) {
-			Food & other = foods[i];
-			if (other.exist) {
-				if (foodChain) {
-					if (org.getSpecies() == 0) {
-						organismPerceptObject(org, other, perceptions, P_FOOD);
+		// perception other food or organism
+		using std::min;
+		using std::max;
+
+		int grid_col = org.x / gridSize;
+		int grid_row = org.y / gridSize;
+		int startCol = max(grid_col - 1, 0);
+		int startRow = max(grid_row - 1, 0);
+		int endCol = min(grid_col + 1, collisionMatrixWidth - 1);
+		int endRow = min(grid_row + 1, collisionMatrixHeight - 1);
+		for (int row = startRow; row <= endRow; row++) {
+			for (int col = startCol; col <= endCol; col++) {
+				//Organism
+				orgGrid & g = orgMat[row][col];
+				for (int i = 0; i < g.size(); i++) {
+					Organism * other = (g[i]);
+
+					if (other->id == org.id) continue;
+					if (!other->exist) continue;
+
+					int perceptType = P_NEUTRAL;
+					if (foodChain) {
+						if (org.getSpecies() - other->getSpecies() == 1) {
+							perceptType = P_FOOD;
+						}
+						else if (other->getSpecies() - org.getSpecies() == 1) {
+							perceptType = P_ORGANISM_THREAT;
+						}
+						else if (other->getSpecies() == org.getSpecies()) {
+							perceptType = P_SAME_SPECIES;
+						}
 					}
 					else {
-						organismPerceptObject(org, other, perceptions, P_NEUTRAL);
+						if (other->getSpecies() != org.getSpecies()) {
+							if (other->getSize() > org.getSize()) {
+								perceptType = P_ORGANISM_THREAT;
+							}
+							else {
+								perceptType = P_NEUTRAL;
+							}
+						}
+						else {
+							perceptType = P_SAME_SPECIES;
+						}
+					}
+					organismPerceptObject(org, *other, perceptions, perceptType);
+				}
+				//Food
+				foodGrid & g2 = foodMat[row][col];
+				for (int i = 0; i < g2.size(); i++) {
+					Food * food = (g2[i]);
+					if (!food->exist) continue;
+					if (foodChain) {
+						if (org.getSpecies() == 0) {
+							organismPerceptObject(org, *food, perceptions, P_FOOD);
+						}
+						else {
+							organismPerceptObject(org, *food, perceptions, P_NEUTRAL);
+						}
+					}
+					else {
+						organismPerceptObject(org, *food, perceptions, P_FOOD);
 					}
 				}
-				else {
-					organismPerceptObject(org, other, perceptions, P_FOOD);
-				}
+
 			}
 		}
+
+
 		organismPerceptEdges(org, perceptions);
 		org.perception = perceptions;
 	}
@@ -485,6 +571,9 @@ private:
 
 		floatBase timeScale = 1 / (floatBase)FRAME_RATE;
 
+
+		int grid_col = org.x / gridSize;
+		int grid_row = org.y / gridSize;
 
 		//org.acceleration = action[ACTION_ACCELERATE] * timeScale;
 		org.direction += action[ACTION_TURN] * org.agility * timeScale;
@@ -508,17 +597,27 @@ private:
 		//cout << "dir=" << org.direction << endl;
 
 
+		int grid_col2 = org.x / gridSize;
+		int grid_row2 = org.y / gridSize;
+
+#pragma omp critical
+		{
+			if (grid_col != grid_col2 || grid_row != grid_row2) {
+				removeOrgFromGrid(orgMat, org, grid_col, grid_row);
+				addOrgToGrid(orgMat, org, grid_col2, grid_row2);
+			}
+		}
 		if (org.x < r) {
-			org.x = r; org.hunger -= timeScale * 2;
+			org.x = r; //org.hunger -= timeScale * 2;
 		}
 		if (org.x > width - r) {
-			org.x = width - r; org.hunger -= timeScale * 2;
+			org.x = width - r;// org.hunger -= timeScale * 2;
 		}
 		if (org.y < r) {
-			org.y = r; org.hunger -= timeScale * 2;
+			org.y = r; //org.hunger -= timeScale * 2;
 		}
 		if (org.y > height - r) {
-			org.y = height - r; org.hunger -= timeScale * 2;
+			org.y = height - r;// org.hunger -= timeScale * 2;
 		}
 		floatBase consumption = hungerFormula(org.getSize(), org.speed, action[ACTION_TURN]);
 		//cout << consumption * timeScale<<", "<< org.hunger<< endl;
@@ -543,13 +642,13 @@ private:
 					if (org.getSpecies() == 0) {
 						other.exist = false;
 						org.foodGet++;
-						org.hunger += pow(other.getSize(), 2); // e=1/2mv^2, where v is however related to  :)
+						org.hunger += pow(SIZE_BASE, 2); // e=1/2mv^2, where v is however related to  :)
 					}
 				}
 				else if (org.getSize() > other.getSize()*0.95) { //eat the other organism if size is much larger
 					other.exist = false;
 					org.foodGet++;
-					org.hunger += pow(other.getSize(), 2); // e=1/2mv^2, where v is however related to  :)
+					org.hunger += pow(SIZE_BASE, 2); // e=1/2mv^2, where v is however related to  :)
 				}
 
 			}
@@ -561,13 +660,13 @@ private:
 					if (org.getSpecies() - orgPtr->getSpecies() == 1) {
 						orgPtr->exist = false;
 						org.foodGet++;
-						org.hunger += pow(other.getSize(), 2); // e=1/2mv^2, where v is however related to  :)
+						org.hunger += pow(SIZE_BASE, 2); // e=1/2mv^2, where v is however related to  :)
 					}
 				}
 				else  if (org.getSize() > other.getSize()*1.25) { //eat the other organism if size is much larger
 					other.exist = false;
 					org.foodGet++;
-					org.hunger += pow(other.getSize(), 2); // e=1/2mv^2, where v is however related to  :)
+					org.hunger += pow(SIZE_BASE, 2); // e=1/2mv^2, where v is however related to  :)
 				}
 			}
 		}
@@ -576,26 +675,43 @@ private:
 	inline void organismInteract(int k) {
 
 		Organism & org = orgs[k];
-		for (int i = 0; i < orgs.size(); i++) {
-			if (i != k) {
-				Organism & other = orgs[i];
-				if (other.exist && other.getSpecies() != org.getSpecies())
-					_interact(org, other);
+
+		using std::max;
+		using std::min;
+
+		int grid_col = org.x / gridSize;
+		int grid_row = org.y / gridSize;
+		int startCol = max(grid_col - 1, 0);
+		int startRow = max(grid_row - 1, 0);
+		int endCol = min(grid_col + 1, collisionMatrixWidth - 1);
+		int endRow = min(grid_row + 1, collisionMatrixHeight - 1);
+		for (int row = startRow; row <= endRow; row++) {
+			for (int col = startCol; col <= endCol; col++) {
+				//Organism
+				orgGrid & g = orgMat[row][col];
+				for (int i = 0; i < g.size(); i++) {
+					Organism * other = (g[i]);
+
+					if (other->id == org.id) continue;
+					if (!other->exist) continue;
+
+					if (other->getSpecies() != org.getSpecies())
+						_interact(org, *other);
+				}
+				//Food
+				if (org.getSpecies() > 0 && foodChain) { continue; }
+				foodGrid & g2 = foodMat[row][col];
+				for (int i = 0; i < g2.size(); i++) {
+					Food * food = (g2[i]);
+					if (!food->exist) continue;
+					_interact(org, *food);
+				}
+
 			}
 		}
-		if (foodChain) {
-			if (org.getSpecies() > 0) return;
-		}
 
-
-		for (int i = 0; i < foods.size(); i++) {
-			Food & food = foods[i];
-			if (food.exist)
-				_interact(org, food);
-		}
 
 	}
-
 
 };
 

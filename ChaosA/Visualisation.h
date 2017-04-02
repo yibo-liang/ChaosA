@@ -4,8 +4,11 @@
 
 #include <SFML\Graphics.hpp>
 #include "World.h"
+#include "Pool.hpp"
 #include <thread>
 #include <strstream>
+#include <memory>
+
 using Window = sf::RenderWindow;
 using sf::CircleShape;
 using sf::Vector2f;
@@ -31,9 +34,13 @@ public:
 	sf::Color colorFood = sf::Color(0, 255, 0);
 	sf::Color colorEdge = sf::Color(255, 244, 170);
 
+	sf::Font font;
+
 	floatBase maxFitness = DBL_MIN;
 	floatBase minFitness = DBL_MAX;
 	std::vector<vector<floatBase>> averageFitnessRecord, maxFitnessRecord;
+
+	std::shared_ptr<Pool> & pool;
 
 	void renderFitness(vector<std::pair<floatBase, floatBase>> newfitness, World & world) {
 
@@ -54,15 +61,18 @@ public:
 		w->clear();
 
 		floatBase dfit = maxFitness - minFitness;
-		for (int s = 0; s < maxFitnessRecord.size(); s++) {
+		for (auto s = 0; s < maxFitnessRecord.size(); s += 1) {
 
-			sf::VertexArray linemax(sf::LinesStrip, maxFitnessRecord[s].size() + 1);
-			sf::VertexArray lineavr(sf::LinesStrip, maxFitnessRecord[s].size() + 1);
+			sf::VertexArray linemax(sf::LinesStrip);
+			sf::VertexArray lineavr(sf::LinesStrip);
 
 
-			linemax[0].position = sf::Vector2f(0, windowHeight);
-			lineavr[0].position = sf::Vector2f(0, windowHeight);
-			for (int i = 0; i < maxFitnessRecord[s].size(); i += 1) {
+			linemax.append(sf::Vertex(sf::Vector2f(0, windowHeight)));
+			lineavr.append(sf::Vertex(sf::Vector2f(0, windowHeight)));
+
+			auto step = (maxFitnessRecord[s].size() / 500) + 1;
+			auto skipRange = maxFitnessRecord[s].size() - maxFitnessRecord[s].size() % step;
+			for (auto i = 0; i < maxFitnessRecord[s].size(); i += (i < skipRange ? step : 1)) {
 				floatBase maxFit = maxFitnessRecord[s][i];
 				floatBase avrFit = averageFitnessRecord[s][i];
 
@@ -70,25 +80,27 @@ public:
 					(i + 1) / (floatBase)maxFitnessRecord[s].size() * (floatBase)windowWidth,
 					windowHeight - (maxFit - minFitness) / dfit * (floatBase)windowHeight
 				);
-				linemax[i + 1].position = maxp;
-				linemax[i + 1].color = speciesColours[s];
-
+				sf::Vertex vmax(maxp);
+				vmax.color = speciesColours[s];
 				if (*showAverage)
-					linemax[i + 1].color.a = 85;
+					vmax.color.a = 85;
+				linemax.append(vmax);
 
 				sf::Vector2f avrp(
 					(i + 1) / (floatBase)averageFitnessRecord[s].size() * (floatBase)windowWidth,
 					windowHeight - (avrFit - minFitness) / dfit * (floatBase)windowHeight
 				);
-				lineavr[i + 1].position = avrp;
-				lineavr[i + 1].color = speciesColours[s];
+				sf::Vertex vavr(avrp);
+				vavr.color = speciesColours[s];
+				lineavr.append(vavr);
 
 			}
 			if (*showMaximum)
 				w->draw(linemax);
 			if (*showAverage)
 				w->draw(lineavr);
-
+			renderDefaultText();
+			renderText(newfitness);
 		}
 
 		w->display();
@@ -112,12 +124,82 @@ public:
 				drawFood(foods.at(i), w);
 		}
 
-
-
+		renderDefaultText();
 		w->display();
 	}
 
-	Visualisation() {
+	void renderDefaultText() {
+
+		Window * w = *window.get();
+		using std::to_string;
+		sf::Text text;
+		text.setFont(font);
+		text.setString(
+			"[M] HIDE/SHOW Maximum Fitness      [N] HIDE/SHOW Average Fitness      [F] Turn ON/OFF Fast Mode      [P] Turn ON/OFF VISION");
+		text.setCharacterSize(12);
+		text.setFillColor(sf::Color::White);
+		text.setPosition(Vector2f(10, 10));
+
+		w->draw(text);
+
+		using std::to_string;
+		string tmp = ((*fastMode) ? "ON" : "OFF");
+		text.setString(
+			"Fast Mode = "
+			+ tmp);
+		text.setCharacterSize(12);
+		text.setFillColor(sf::Color::White);
+		text.setPosition(Vector2f(10, 28));
+		w->draw(text);
+	}
+
+	void renderText(vector<std::pair<floatBase, floatBase>> newfitness) {
+
+		Window * w = *window.get();
+		using std::to_string;
+
+
+		sf::Text text;
+		text.setFont(font);
+		text.setString(
+			"Generation : "
+			+ to_string(maxFitnessRecord[0].size()));
+		text.setCharacterSize(12);
+		text.setFillColor(sf::Color::White);
+		text.setPosition(Vector2f(10, 46));
+
+		w->draw(text);
+
+		for (int s = 0; s < newfitness.size(); s++) {
+
+			sf::Text text;
+
+			string star = "";
+			if (pool->swap && s == pool->currentEvolveSpecies) {
+				star = " *";
+			}
+			text.setFont(font);
+			text.setString(
+				"[" + to_string(s) + "] MAX="
+				+ to_string(int(newfitness[s].first))
+				+ ", AVR="
+				+ to_string(int(newfitness[s].second))
+				+ star);
+			text.setCharacterSize(12);
+			text.setFillColor(speciesColours[s]);
+			text.setPosition(Vector2f(10, 70 + 18 * s));
+
+			w->draw(text);
+		}
+
+	}
+
+	Visualisation(std::shared_ptr<Pool> pool) : pool(pool) {
+
+		if (!font.loadFromFile("font.ttf")) {
+			cout << "ERROR : Font file 'font.ttf' not found." << endl;
+			throw 404;
+		}
 
 		windowCreated = std::make_shared<bool>(false);
 		exit = std::make_shared<bool>(false);
@@ -216,6 +298,9 @@ private:
 			else if (abs(ptype - P_NEUTRAL) < 0.1) {
 				pcolor = sf::Color(200, 200, 200);
 			}
+			else if (abs(ptype - P_SAME_SPECIES) < 0.1) {
+				pcolor = sf::Color(0, 50, 250);
+			}
 			pcolor.a = 100;
 
 			convex.setFillColor(pcolor);
@@ -243,8 +328,13 @@ private:
 		return new std::thread([&] {windowEventThread(); });
 	}
 
+
+
 	void windowEventThread() {
-		window = std::make_shared<Window *>(new sf::RenderWindow(sf::VideoMode(windowWidth, windowHeight), "SFML works!", sf::Style::Default));
+		sf::ContextSettings settings;
+		settings.antialiasingLevel = 8;
+
+		window = std::make_shared<Window *>(new sf::RenderWindow(sf::VideoMode(windowWidth, windowHeight), "SFML works!", sf::Style::Default, settings));
 		Window * w = *window.get();
 		w->setFramerateLimit(FRAME_RATE);
 		w->setVerticalSyncEnabled(true);

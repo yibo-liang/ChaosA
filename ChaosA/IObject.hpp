@@ -7,6 +7,9 @@ class IObject
 {
 public:
 	virtual ~IObject() {};
+
+
+	int id;
 	floatBase x;                          
 	floatBase y;
 
